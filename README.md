@@ -1,4 +1,4 @@
-# .lore
+# lore
 
 A structured folder you commit to your project that makes any codebase immediately
 readable — by you, by teammates, and by AI agents like Claude Code.
@@ -13,19 +13,19 @@ You think through architecture in Claude Web. You build in Claude Code. Nothing 
 Every new session starts cold — you're re-explaining the project, re-establishing context,
 re-answering questions the last session already answered.
 
-`.lore` fixes that. It's a shared source of truth that lives in the repo and travels with it.
+`lore` fixes that. It's a shared source of truth that lives in the repo and travels with it.
 
 ---
 
 ## How It Works
 
-Add a `.lore/` folder to your project. Fill it in. Commit it with your code.
+Add a `lore/` folder to your project. Fill it in. Commit it with your code.
 
 ```
 project/
   README.md              ← Human-facing overview (this file)
   CLAUDE.md              ← Claude Code entry point
-  .lore/
+  lore/
     OG.md                ← Your raw dev journal — human only, never AI
     context.md           ← Where the project stands right now
     architecture.md      ← How the system is designed
@@ -61,11 +61,11 @@ To update after pulling new changes, run `./install.sh` again.
 
 Once installed, tell Claude Code:
 
-> "Init `.lore` for this project"
+> "Init `lore` for this project"
 
 or for an existing repo:
 
-> "Read this repo and generate `.lore` from what you find"
+> "Read this repo and generate `lore` from what you find"
 
 Claude will scaffold the folder, populate what it can infer, and tell you what still
 needs your input.
@@ -76,11 +76,11 @@ needs your input.
 
 ```
 1. Think through ideas in Claude Web
-2. Ask Claude Web to generate a .lore file from the discussion
-3. Paste it into the right .lore file in your repo
+2. Ask Claude Web to generate a lore file from the discussion
+3. Paste it into the right lore file in your repo
 4. Claude Code picks it up on next session via CLAUDE.md
 5. After a build session, ask Claude Code to update context.md
-6. Commit .lore alongside your code
+6. Commit lore alongside your code
 ```
 
 ---

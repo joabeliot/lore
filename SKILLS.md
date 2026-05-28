@@ -1,24 +1,24 @@
 ---
 name: lore
-description: Initialize, update, and maintain the .lore project memory system. Use this skill whenever the user mentions init .lore, set up project memory, generate .lore from an existing repo, update CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say ".lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
+description: Initialize, update, and maintain the lore project memory system. Use this skill whenever the user mentions init lore, set up project memory, generate lore from an existing repo, update CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say "lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
 version: 1.0.0
 ---
 
-# SKILL: .lore — Project AI Readiness Layer
+# SKILL: lore — Project AI Readiness Layer
 
 ## What This Is
 
-`.lore` is a folder you commit to your project. It's the cassette an AI agent plugs into
-to know the project — instead of reading the entire codebase every time, it reads `.lore`
+`lore` is a folder you commit to your project. It's the cassette an AI agent plugs into
+to know the project — instead of reading the entire codebase every time, it reads `lore`
 and gets the architecture, the decisions, the guardrails, and the full history of every
 conversation that shaped the project.
 
 Think of it as the project's memory. Not for the code — for the builder.
 
 **Use this skill to:**
-- Init `.lore` on a new project from scratch
-- Read an existing repo and generate `.lore` from what's already there
-- Update `.lore` files during or after a dev session
+- Init `lore` on a new project from scratch
+- Read an existing repo and generate `lore` from what's already there
+- Update `lore` files during or after a dev session
 - Bridge ideas from Claude Web into Claude Code context
 
 ---
@@ -29,7 +29,7 @@ Think of it as the project's memory. Not for the code — for the builder.
 project/
   README.md
   CLAUDE.md
-  .lore/
+  lore/
     OG.md
     MISSION.md
     CONTEXT.md
@@ -50,20 +50,20 @@ project/
 
 | File / Folder | Audience | Purpose |
 |---|---|---|
-| [`README.md`](#readmemd) | Humans | Project overview, setup instructions, links to CLAUDE.md and .lore |
-| [`CLAUDE.md`](#claudemd) | Claude Code | AI entry point — read every session; contains stack, rules, .lore index, current focus |
-| [`.lore/OG.md`](#ogmd) | Developer only 🔒 | Raw, unstructured dev journal; never AI-generated; Claude reads for vibe and intent |
-| [`.lore/MISSION.md`](#missionmd) | Developer only 🔒 | The project's soul — what it is, who it's for, why it should exist; never AI-generated |
-| [`.lore/CONTEXT.md`](#contextmd) | Claude Code | Session log — every AI conversation recorded: who asked, what was proposed, what was done |
-| [`.lore/ADR.md`](#adrmd) | Claude Code + humans | Architecture Decision Records — what was decided, why, and what was rejected |
-| [`.lore/GUARDRAILS.md`](#guardrailsmd) | Claude Code + developers | Project-specific dos and don'ts — always/never/conventions per domain |
-| [`.lore/architecture.md`](#architecturemd) | Claude Code + humans | System design, infra topology, service map, data flow |
-| [`.lore/architecture/models.md`](#architecturemodelsmd) | Claude Code + humans | Data models, schemas, relationships, quirks |
-| [`.lore/architecture/apis.md`](#architectureapismd) | Claude Code + humans | API contracts, endpoints, auth, rate limits, external services |
-| [`.lore/features/[name].md`](#featuresfeature-namemd) | Claude Code + humans | One file per committed or in-progress feature |
-| [`.lore/ideas/[name].md`](#ideasidea-namemd) | Developer + Claude Code | Unvalidated captures — low friction, no strict format |
-| `.lore/skills/custom/` | Claude Code | Project-specific skills written for this repo |
-| `.lore/skills/skills.yml` | Claude Code | Registry of all forked/adapted skills in use — like requirements.txt |
+| [`README.md`](#readmemd) | Humans | Project overview, setup instructions, links to CLAUDE.md and lore |
+| [`CLAUDE.md`](#claudemd) | Claude Code | AI entry point — read every session; contains stack, rules, lore index, current focus |
+| [`lore/OG.md`](#ogmd) | Developer only 🔒 | Raw, unstructured dev journal; never AI-generated; Claude reads for vibe and intent |
+| [`lore/MISSION.md`](#missionmd) | Developer only 🔒 | The project's soul — what it is, who it's for, why it should exist; never AI-generated |
+| [`lore/CONTEXT.md`](#contextmd) | Claude Code | Session log — every AI conversation recorded: who asked, what was proposed, what was done |
+| [`lore/ADR.md`](#adrmd) | Claude Code + humans | Architecture Decision Records — what was decided, why, and what was rejected |
+| [`lore/GUARDRAILS.md`](#guardrailsmd) | Claude Code + developers | Project-specific dos and don'ts — always/never/conventions per domain |
+| [`lore/architecture.md`](#architecturemd) | Claude Code + humans | System design, infra topology, service map, data flow |
+| [`lore/architecture/models.md`](#architecturemodelsmd) | Claude Code + humans | Data models, schemas, relationships, quirks |
+| [`lore/architecture/apis.md`](#architectureapismd) | Claude Code + humans | API contracts, endpoints, auth, rate limits, external services |
+| [`lore/features/[name].md`](#featuresfeature-namemd) | Claude Code + humans | One file per committed or in-progress feature |
+| [`lore/ideas/[name].md`](#ideasidea-namemd) | Developer + Claude Code | Unvalidated captures — low friction, no strict format |
+| `lore/skills/custom/` | Claude Code | Project-specific skills written for this repo |
+| `lore/skills/skills.yml` | Claude Code | Registry of all forked/adapted skills in use — like requirements.txt |
 
 > 🔒 = Human-only. Claude never writes to these files.
 
@@ -78,14 +78,14 @@ Each file has a defined audience, purpose, and update rhythm.
 ### `README.md`
 **Audience:** Humans — developers, contributors, stakeholders.  
 **Rule:** No AI-specific content. Keep it clean.  
-**Must include:** Project purpose, setup instructions, link to `CLAUDE.md` and `.lore/`.
+**Must include:** Project purpose, setup instructions, link to `CLAUDE.md` and `lore/`.
 
 ---
 
 ### `CLAUDE.md`
 **Audience:** Claude Code — read automatically at the start of every session.  
 **Rule:** Keep it dense. This is the first thing Claude reads, every time.  
-**Must include:** Project name and purpose, stack, key rules, .lore index, current focus, and the Session Rule.
+**Must include:** Project name and purpose, stack, key rules, lore index, current focus, and the Session Rule.
 
 **Template:**
 ```markdown
@@ -93,19 +93,19 @@ Each file has a defined audience, purpose, and update rhythm.
 
 ## What This Is
 [2-3 sentences: what the project does, the stack, and who it's for]
-See `.lore/MISSION.md` for the full project mission.
+See `lore/MISSION.md` for the full project mission.
 
 ## Rules
 - [Key constraint 1]
 - [Key constraint 2]
-- See `.lore/GUARDRAILS.md` for full guardrails
+- See `lore/GUARDRAILS.md` for full guardrails
 
 ## Stack
 - Backend: [e.g. Django / PostgreSQL]
 - Frontend: [e.g. Next.js / Flutter]
 - Infra: [e.g. Docker / AWS / Cloudflare]
 
-## .lore Index
+## lore Index
 - `MISSION.md` — full project mission and purpose (read when context matters)
 - `CONTEXT.md` — session log of all AI conversations in this project
 - `ADR.md` — architecture decision records
@@ -120,8 +120,8 @@ See `.lore/MISSION.md` for the full project mission.
 [What is actively being worked on right now]
 
 ## Session Rule
-This project uses `.lore` for AI memory. At the end of every session:
-- Log the session to `.lore/CONTEXT.md` using the session entry format
+This project uses `lore` for AI memory. At the end of every session:
+- Log the session to `lore/CONTEXT.md` using the session entry format
 ```
 
 ---
@@ -321,7 +321,7 @@ skills:
 ## Session Update Rule
 
 At the end of every session, Claude appends a session entry to `CONTEXT.md`. This is
-non-negotiable — it's what makes `.lore` a living memory instead of a one-time setup.
+non-negotiable — it's what makes `lore` a living memory instead of a one-time setup.
 
 **What Claude logs after every session:**
 
@@ -345,7 +345,7 @@ non-negotiable — it's what makes `.lore` a living memory instead of a one-time
 
 ## Init: New Project
 
-When asked to init `.lore` on a new project:
+When asked to init `lore` on a new project:
 
 1. Create the full folder structure
 2. Stub every file with its template
@@ -361,37 +361,37 @@ When asked to init `.lore` on a new project:
 - Do not create files inside `features/` or `ideas/` — leave the directories empty
 - Do not add `ADR.md` entries unless a decision was explicitly stated
 
-The reason: inventing project content contaminates `.lore` with hallucinated facts that look real.
+The reason: inventing project content contaminates `lore` with hallucinated facts that look real.
 It's better to leave a field blank than to fill it with a confident guess.
 
 ---
 
 ## Init: Existing Repo
 
-When pointed at a repo that has no `.lore`:
+When pointed at a repo that has no `lore`:
 
 **Step 1 — Check for CLAUDE.md**
-- If `CLAUDE.md` exists: inject the `.lore` block into it (Session Rule + .lore Index). Do not overwrite the rest.
+- If `CLAUDE.md` exists: inject the `lore` block into it (Session Rule + lore Index). Do not overwrite the rest.
 - If `CLAUDE.md` does not exist: create it from the template.
 
 **Step 2 — Read the repo**  
 Scan `README.md`, `CLAUDE.md` (if any), package files (`package.json`, `requirements.txt`,
 `pubspec.yaml`, `Dockerfile`, etc.), and folder structure.
 
-**Step 3 — Generate `.lore/`** using canonical paths only:
-- `.lore/architecture.md` from inferred system design
-- `.lore/architecture/models.md` from model and schema files found
-- `.lore/architecture/apis.md` from route files, serializers, or API configs found
-- `.lore/CONTEXT.md` with header ready for first session entry
-- `.lore/OG.md` left blank with the human prompt
-- `.lore/MISSION.md` left blank with the human prompt
+**Step 3 — Generate `lore/`** using canonical paths only:
+- `lore/architecture.md` from inferred system design
+- `lore/architecture/models.md` from model and schema files found
+- `lore/architecture/apis.md` from route files, serializers, or API configs found
+- `lore/CONTEXT.md` with header ready for first session entry
+- `lore/OG.md` left blank with the human prompt
+- `lore/MISSION.md` left blank with the human prompt
 
 **Step 4 — Flag gaps**  
 Consolidate everything that couldn't be inferred into a numbered list. Don't silently skip.
 
-**Critical: never invent custom subdirectories.** The `.lore/` folder structure is fixed — do not
-create subdirectories like `.lore/apps/`, `.lore/config/`, or `.lore/infra/` to mirror the repo's
-own structure. All inferred content goes into the canonical files. A non-standard `.lore/` layout
+**Critical: never invent custom subdirectories.** The `lore/` folder structure is fixed — do not
+create subdirectories like `lore/apps/`, `lore/config/`, or `lore/infra/` to mirror the repo's
+own structure. All inferred content goes into the canonical files. A non-standard `lore/` layout
 breaks compatibility with every other Claude instance that reads it.
 
 ---
@@ -403,11 +403,11 @@ This workflow keeps them in sync.
 
 ```
 1. Think through ideas, architecture, or features in Claude Web
-2. Ask Claude Web to generate or update a .lore file from the discussion
-3. Paste the output into the correct .lore file in your repo
+2. Ask Claude Web to generate or update a lore file from the discussion
+3. Paste the output into the correct lore file in your repo
 4. Claude Code picks it up next session via CLAUDE.md
 5. After building, Claude Code logs the session to CONTEXT.md
-6. Commit .lore alongside code changes
+6. Commit lore alongside code changes
 ```
 
 **Rule:** `OG.md` and `MISSION.md` are always written by the human. Every other file can be
@@ -415,7 +415,7 @@ AI-generated or AI-updated — but should be human-reviewed before committing.
 
 ---
 
-## Keeping `.lore` Healthy
+## Keeping `lore` Healthy
 
 - `CONTEXT.md` is appended by Claude every session — don't let it get skipped
 - Add an `ADR.md` entry whenever something significant is decided or rejected
@@ -427,11 +427,11 @@ AI-generated or AI-updated — but should be human-reviewed before committing.
 ## Evolving This Skill
 
 This skill lives at `~/.claude/skills/lore/SKILL.md` globally and optionally at
-`.lore/skills/custom/lore.md` per project.
+`lore/skills/custom/lore.md` per project.
 
 Treat it like code — version it, improve it, fork it per project if the project needs
 a different flavor. When the system evolves (new file types, new workflows, new patterns),
 update this file to reflect it.
 
-The goal: any project with `.lore/` is immediately legible to any Claude instance,
+The goal: any project with `lore/` is immediately legible to any Claude instance,
 any developer, and any future agent — with zero onboarding friction.

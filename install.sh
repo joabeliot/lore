@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install or update the .lore skill to your Claude Code skills directory.
+# Install or update the lore skill to your Claude Code skills directory.
 # Run this once to install, and again any time you pull updates.
 
 SKILL_DIR="$HOME/.claude/skills/lore"
