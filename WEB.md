@@ -1,3 +1,9 @@
+---
+name: lore
+description: Web Claude workflow for lore. Use this skill when working in Claude Web on a project that uses lore. Covers how to run ideation sessions, generate Lore Packages, and hand off structured output to the conductor or solo agent for execution.
+version: 1.0.0
+---
+
 # lore — Web Claude Workflow
 
 ## Web is the Structured Spark
