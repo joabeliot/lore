@@ -1,7 +1,7 @@
 ---
 name: lore
 description: Initialize, update, and maintain the lore project memory system. Use this skill whenever the user mentions init lore, set up project memory, generate lore from an existing repo, update CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say "lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
-version: 2.1.0
+version: 2.2.0
 ---
 
 # SKILL: lore — Project AI Readiness Layer
@@ -48,6 +48,9 @@ project/
     testing/
       registry.md            ← What's covered, what's not
     decisions/               ← Architecture Decision Records (one per decision)
+    bullpen/                 ← One folder per agent — identity + role in this project
+      [agent-name]/
+        identity.md          ← What this agent does here, strengths, task fit
     skills/
       custom/                ← Project-specific Claude skills
       skills.yml             ← Skill registry
@@ -62,7 +65,7 @@ Not everything loads every session. This keeps token cost low and context releva
 | Tier | Files | When |
 |---|---|---|
 | **1 — Always** | `INDEX.md`, `GUARDRAILS.md`, `CONTEXT.md` | Every session via CLAUDE.md hook |
-| **2 — On-Demand** | `kanban/`, `architecture/`, `features/`, `testing/`, `decisions/` | Load only what the task requires |
+| **2 — On-Demand** | `kanban/`, `architecture/`, `features/`, `testing/`, `decisions/`, `bullpen/` | Load only what the task requires |
 | **Never Auto** | `OG.md`, `MISSION.md`, `CHANGELOG.md` | Human or agent pulls explicitly |
 
 **Rule:** Start every session reading Tier 1 only. Load Tier 2 files when the task requires them — name which files you loaded in your session log entry.
@@ -189,16 +192,16 @@ Left open: [anything unfinished or deferred]
 ---
 ```
 
-**Multi-agent log format** (Hermes orchestrated sessions):
+**Multi-agent log format** (orchestrated sessions):
 ```markdown
-### YYYY-MM-DD — [Dev Name] / [sub-agent]
+### YYYY-MM-DD — [Orchestrator] / [sub-agent]
 [2-3 sentence summary]
 Loaded: `architecture/models.md`
 Task: #[ID] — completed / in progress
 Left open: [anything unfinished]
 ```
 
-Format: `[Human] / [Sub-agent]` makes it always clear who orchestrated and who executed.
+Format: `[Orchestrator] / [Sub-agent]` — replace with actual names (e.g. `Jerry / claude-code`, `Jerry / codex`). Makes it always clear who orchestrated and who executed.
 
 **How to write a good log entry:**
 - Summarize intent + outcome in 2-3 sentences. Not a transcript.
@@ -395,6 +398,26 @@ Format: `[Human] / [Sub-agent]` makes it always clear who orchestrated and who e
 
 ---
 
+### `bullpen/[agent-name]/identity.md`
+**Audience:** Conductor — load `bullpen/` when building a delegation plan.
+**Purpose:** Each agent's role, strengths, and task fit scoped to THIS project. The conductor reads this to know who to assign what.
+**Rule:** One folder per agent. Created when an agent is added to the project. Updated when their role changes. Written by humans or the conductor — not by sub-agents themselves.
+
+**Template:**
+```markdown
+# [Agent Name]
+
+**Role:** [what this agent does in this specific project]
+**Strengths:** [what it excels at — be specific to this codebase]
+**Delegate when:** [types of tasks that should go to this agent]
+**Avoid:** [what not to assign here]
+**Invocation:** [how the conductor calls this agent]
+```
+
+**Example agents:** `jerry/` (orchestrator), `claude-code/`, `codex/`, `gemini/`
+
+---
+
 ### `skills/custom/`
 Project-specific Claude skills. Same SKILL.md format.
 Use for patterns unique to this repo: how views are written, how errors are handled, how migrations work, how tests are structured.
@@ -442,7 +465,10 @@ At the end of every session, Claude must:
 
 ## Multi-Agent Protocol (Hermes)
 
-When Hermes orchestrates multiple sub-agents (Claude Code, Codex, Gemini CLI), `lore` becomes the shared state layer between all of them. This protocol keeps every agent synchronized and prevents conflicts.
+> **If you are the conductor (orchestrator):** read `CONDUCTOR.md` instead of this section — it is your complete operating manual and supersedes this summary.
+> **If you are a sub-agent:** read this section to understand your role in the orchestration.
+
+When an orchestrator (e.g. Hermes/Jerry) coordinates multiple sub-agents (Claude Code, Codex, Gemini CLI), `lore` becomes the shared state layer between all of them. This protocol keeps every agent synchronized and prevents conflicts.
 
 ### Session Types
 
