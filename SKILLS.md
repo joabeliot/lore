@@ -1,7 +1,7 @@
 ---
 name: lore
 description: Initialize, update, and maintain the lore project memory system. Use this skill whenever the user mentions init lore, set up project memory, generate lore from an existing repo, update CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say "lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
-version: 2.2.0
+version: 2.3.0
 ---
 
 # SKILL: lore — Project AI Readiness Layer
@@ -11,6 +11,8 @@ version: 2.2.0
 `lore` is a folder you commit to your project. It's the single source of truth — the bible — that any developer, AI agent, or new team member reads to understand the project. Not the code. The *project*: why it exists, how it's designed, what's been decided, what's being built, and what the rules are.
 
 Think of `lore` as the interface between humans and the codebase. Code tells you *what*. `lore` tells you *why*, *how*, and *what's next*.
+
+> **📖 Lore is the bible of this project.** Every step of every session starts and ends here. Never skip reading it. Never let it go stale. When lore and your instinct disagree, update lore first — your instinct is either new information that belongs in lore, or a mistake that lore protects you from. When in doubt, check lore. When you change the project, update lore. This is the first file loaded and the last file written in every session. No exceptions.
 
 **Use this skill to:**
 - Init `lore` on a new project from scratch
