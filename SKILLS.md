@@ -192,16 +192,16 @@ Left open: [anything unfinished or deferred]
 ---
 ```
 
-**Multi-agent log format** (orchestrated sessions):
+**Multi-agent log format** (conductor sessions):
 ```markdown
-### YYYY-MM-DD — [Orchestrator] / [sub-agent]
+### YYYY-MM-DD — [Conductor] / [sub-agent]
 [2-3 sentence summary]
 Loaded: `architecture/models.md`
 Task: #[ID] — completed / in progress
 Left open: [anything unfinished]
 ```
 
-Format: `[Orchestrator] / [Sub-agent]` — replace with actual names (e.g. `Jerry / claude-code`, `Jerry / codex`). Makes it always clear who orchestrated and who executed.
+Format: `[Conductor] / [Sub-agent]` — replace with actual names (e.g. `Jerry / claude-code`, `Jerry / codex`). Makes it always clear who conducted and who executed.
 
 **How to write a good log entry:**
 - Summarize intent + outcome in 2-3 sentences. Not a transcript.
@@ -274,7 +274,7 @@ Format: `[Orchestrator] / [Sub-agent]` — replace with actual names (e.g. `Jerr
 # Solo session
 - [~] #001 [Task description] `[started: YYYY-MM-DD, assigned: claude-code]`
 
-# Hermes orchestrated — multiple agents
+# Conductor session — multiple agents
 - [~] #002 [Task A] `[started: YYYY-MM-DD, assigned: claude-code]`
 - [~] #003 [Task B] `[started: YYYY-MM-DD, assigned: codex]`
 ```
@@ -291,7 +291,7 @@ Format: `[Orchestrator] / [Sub-agent]` — replace with actual names (e.g. `Jerr
 2. When finishing a task: move from `inprogress.md` to `done.md`, add completed date + `by: [your-name]`
 3. When proposing a new task: add to `backlog.md` with `source: Agent`
 4. Never delete entries — always move them
-5. In orchestrated sessions: Hermes assigns tasks, sub-agents never self-assign from todo
+5. In conductor sessions: Hermes assigns tasks, sub-agents never self-assign from todo
 
 ---
 
@@ -398,23 +398,89 @@ Format: `[Orchestrator] / [Sub-agent]` — replace with actual names (e.g. `Jerr
 
 ---
 
-### `bullpen/[agent-name]/identity.md`
-**Audience:** Conductor — load `bullpen/` when building a delegation plan.
-**Purpose:** Each agent's role, strengths, and task fit scoped to THIS project. The conductor reads this to know who to assign what.
-**Rule:** One folder per agent. Created when an agent is added to the project. Updated when their role changes. Written by humans or the conductor — not by sub-agents themselves.
+### `bullpen/` — Agent Roster
+
+**Audience:** Conductor — load when building a delegation plan.
+**Purpose:** The bullpen is the conductor's roster of available agents for this project. It tells the conductor who to use for what, and it's the mechanism by which agents receive their project-specific context when a task is delegated to them.
+**Rule:** The conductor decides which agents get a folder and what files go in each one. `identity.md` is the only required file. Everything else is project-specific.
+
+---
+
+#### How the Bullpen Works
+
+**Setting it up (conductor's job):**
+1. When initializing a project, the conductor creates a folder in `bullpen/` for each agent that will work on the project
+2. At minimum, each folder gets an `identity.md` defining the agent's role in this project
+3. Add any other files the agent will need: skills, tools, custom instructions, prompt templates — whatever makes that agent more effective here
+4. The conductor updates bullpen files when agent roles change or new capabilities are added
+
+**Using it during delegation (conductor's job):**
+- Before assigning a task, read all files in the target agent's bullpen folder
+- Include the full contents of those files in the delegation packet under `--- YOUR IDENTITY IN THIS PROJECT ---`
+- This is how the agent knows who they are in this codebase — not from their own memory, from what you inject
+
+**Receiving it (agent's job):**
+- When you receive a delegation packet, your bullpen files are included at the top
+- Read them before anything else — they define your role, your strengths, and your constraints for this project
+- Your identity in one project may differ from another — always use the bullpen files you were given, not assumptions
+
+---
+
+#### `identity.md` — Required for Every Agent
+
+The baseline file every agent folder must have. Scoped to this project specifically.
 
 **Template:**
 ```markdown
 # [Agent Name]
 
 **Role:** [what this agent does in this specific project]
-**Strengths:** [what it excels at — be specific to this codebase]
-**Delegate when:** [types of tasks that should go to this agent]
-**Avoid:** [what not to assign here]
-**Invocation:** [how the conductor calls this agent]
+**Strengths:** [what it excels at — be specific to this codebase and stack]
+**Delegate when:** [types of tasks that should come to this agent]
+**Avoid:** [what not to assign — where this agent underperforms]
+**Invocation:** [how the conductor calls or invokes this agent]
 ```
 
-**Example agents:** `jerry/` (orchestrator), `claude-code/`, `codex/`, `gemini/`
+---
+
+#### Other Files (Project-Specific)
+
+Beyond `identity.md`, add whatever the agent needs to operate well in this project. There's no fixed list — the conductor decides based on what the agent will actually do here.
+
+**Common additions:**
+
+| File | Use it when |
+|---|---|
+| `skills.md` | The agent has specific capabilities relevant to this stack (e.g. "knows DRF patterns used here") |
+| `tools.md` | The agent has access to specific tools in this project (e.g. MCP servers, CLIs, APIs) |
+| `instructions.md` | The agent needs project-specific operating instructions beyond identity |
+| `prompts/` | Reusable prompt templates for common task types this agent handles |
+
+**Examples by agent:**
+
+- `bullpen/claude-code/` — `identity.md` + `skills.md` (Django/Flutter patterns for this repo)
+- `bullpen/codex/` — `identity.md` + `instructions.md` (how to format output for this codebase)
+- `bullpen/gemini/` — `identity.md` + `tools.md` (what CLI tools it has access to)
+- `bullpen/conductor/` — `identity.md` (conductor's own role, so sub-agents understand who's directing them)
+
+---
+
+#### Example Bullpen Structure
+
+```
+lore/bullpen/
+  conductor/
+    identity.md          ← Conductor's role + how sub-agents should report back
+  claude-code/
+    identity.md          ← Role in this project
+    skills.md            ← Django/Flutter conventions specific to this repo
+  codex/
+    identity.md
+    instructions.md      ← How to format generated code for this codebase
+  gemini/
+    identity.md
+    tools.md             ← CLI tools and APIs available to Gemini here
+```
 
 ---
 
@@ -465,21 +531,21 @@ At the end of every session, Claude must:
 
 ## Multi-Agent Protocol (Hermes)
 
-> **If you are the conductor (orchestrator):** read `CONDUCTOR.md` instead of this section — it is your complete operating manual and supersedes this summary.
-> **If you are a sub-agent:** read this section to understand your role in the orchestration.
+> **If you are the conductor:** read `CONDUCTOR.md` instead of this section — it is your complete operating manual and supersedes this summary.
+> **If you are a sub-agent:** read this section to understand your role in the conductor model.
 
-When an orchestrator (e.g. Hermes/Jerry) coordinates multiple sub-agents (Claude Code, Codex, Gemini CLI), `lore` becomes the shared state layer between all of them. This protocol keeps every agent synchronized and prevents conflicts.
+When a conductor (e.g. Hermes/Jerry) coordinates multiple sub-agents (Claude Code, Codex, Gemini CLI), `lore` becomes the shared state layer between all of them. This protocol keeps every agent synchronized and prevents conflicts.
 
 ### Session Types
 
 | Type | Who | Protocol |
 |---|---|---|
 | **Solo** | JB + one agent | Standard Agent Session Workflow |
-| **Orchestrated** | Hermes + sub-agents | This protocol |
+| **Conductor session** | Hermes + sub-agents | This protocol |
 
 ### Hermes Startup Protocol
 
-When Hermes begins an orchestration session:
+When Hermes begins a conductor session:
 1. Read Tier 1: `INDEX.md` → `GUARDRAILS.md` → `CONTEXT.md`
 2. Read `kanban/todo.md` and `kanban/inprogress.md` — understand what's ready and what's already active
 3. Build the delegation plan: which tasks to assign, to which agents, in what order
@@ -535,7 +601,7 @@ These rules prevent lore conflicts when multiple agents are active:
 - **`kanban/done.md` is append-only** — safe for multiple agents to append sequentially without conflict
 - **`CONTEXT.md` header is Hermes's** — sub-agents append log entries; only Hermes rewrites the header block at session end
 
-### Hermes Orchestration Loop
+### Conductor Loop
 
 ```
 1. Read lore Tier 1 + kanban/todo.md + kanban/inprogress.md

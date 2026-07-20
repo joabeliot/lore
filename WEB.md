@@ -1,26 +1,33 @@
 # lore — Web Claude Workflow
 
-## The Role of Web Claude
+## Web is the Structured Spark
 
-Web Claude is the **ideation and planning layer**. Hermes and sub-agents are the **execution layer**. lore is the bridge between them.
+Web Claude is the starting point. It's where thinking becomes structure — where a conversation about architecture, a product decision, or a feature idea gets shaped into something an agent can act on.
 
-When you're on the go — thinking through architecture, planning features, designing systems — you do that in Claude Web. When you're ready to build, you ask Web Claude to generate a Lore Package. That package is what the conductor picks up and executes from.
+You don't build in Claude Web. You think, design, and decide. When you're ready, you say **"generate lore package"** — and Web Claude outputs a structured artifact that the conductor or solo agent picks up and executes from. That's the spark that kick-starts the whole process.
+
+This works at any scale:
+- **Solo** — Claude Code reads the Lore Package directly and runs it
+- **Multi-agent** — the conductor consumes it, assigns tasks to sub-agents, they execute
+
+The web session is always the entry point. The Lore Package is always the handoff.
 
 ```
 Claude Web (you + Web Claude)
-    ↓  discuss, ideate, design
-    ↓  "generate lore instructions"
+    ↓  think, design, decide
+    ↓  "generate lore package"
     ↓
-Lore Package (structured output)
-    ↓  paste into repo files
+Lore Package — the structured spark
+    ↓  paste into repo lore/
     ↓
-Conductor (Hermes) reads it
-    ↓  applies to lore, assigns to agents
+Conductor or Solo Agent reads it
+    ↓  applies to lore, picks up tasks
     ↓
-Sub-agents execute
-    ↓  update lore on completion
+Execution (solo or delegated)
+    ↓  agents build, update lore, report back
     ↓
 lore reflects reality
+    ↓  next web session picks up from here
 ```
 
 ---
@@ -34,7 +41,7 @@ Paste this at the start of any Claude Web session (or set it as Project Instruct
 ```
 You are working with a project that uses lore — a structured project memory system committed to the repo.
 
-Your role: IDEATION LAYER. You think, design, plan, and architect. You do not execute — an orchestrating agent (the conductor) picks up your output and delegates to sub-agents who build.
+Your role: IDEATION LAYER. You think, design, plan, and architect. You do not execute — a conductor picks up your output and delegates to sub-agents who build.
 
 How this session works:
 1. I'll share context about the project (lore files, current state, what I'm thinking about)
