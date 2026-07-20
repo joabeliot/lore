@@ -1,24 +1,23 @@
 ---
 name: lore
 description: Initialize, update, and maintain the lore project memory system. Use this skill whenever the user mentions init lore, set up project memory, generate lore from an existing repo, update CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say "lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
-version: 1.0.0
+version: 2.1.0
 ---
 
 # SKILL: lore — Project AI Readiness Layer
 
 ## What This Is
 
-`lore` is a folder you commit to your project. It's the cassette an AI agent plugs into
-to know the project — instead of reading the entire codebase every time, it reads `lore`
-and gets the architecture, the decisions, the guardrails, and the full history of every
-conversation that shaped the project.
+`lore` is a folder you commit to your project. It's the single source of truth — the bible — that any developer, AI agent, or new team member reads to understand the project. Not the code. The *project*: why it exists, how it's designed, what's been decided, what's being built, and what the rules are.
 
-Think of it as the project's memory. Not for the code — for the builder.
+Think of `lore` as the interface between humans and the codebase. Code tells you *what*. `lore` tells you *why*, *how*, and *what's next*.
 
 **Use this skill to:**
 - Init `lore` on a new project from scratch
 - Read an existing repo and generate `lore` from what's already there
 - Update `lore` files during or after a dev session
+- Manage the kanban board
+- Log decisions, features, and test coverage
 - Bridge ideas from Claude Web into Claude Code context
 
 ---
@@ -27,45 +26,75 @@ Think of it as the project's memory. Not for the code — for the builder.
 
 ```
 project/
-  README.md
-  CLAUDE.md
+  CLAUDE.md                  ← AI session entry point (always loaded)
   lore/
-    OG.md
-    MISSION.md
-    CONTEXT.md
-    ADR.md
-    GUARDRAILS.md
-    architecture.md
+    INDEX.md                 ← Tier 1: TOC + loading guide (always loaded)
+    GUARDRAILS.md            ← Tier 1: project rules (always loaded)
+    CONTEXT.md               ← Tier 1: current state + session log (always loaded)
+    OG.md                    ← 🔒 Human-only: raw dev journal
+    MISSION.md               ← 🔒 Human-only: project soul
+    CHANGELOG.md             ← Hook-generated: git commit history
+    kanban/
+      backlog.md             ← Captured, not yet scheduled
+      todo.md                ← Scheduled, not started
+      inprogress.md          ← Active work
+      done.md                ← Completed
     architecture/
-      models.md
-      apis.md
-    features/
-    ideas/
+      overview.md            ← Service map, data flow, infra topology
+      models.md              ← Data models and schemas
+      apis.md                ← API contracts and external services
+    features/                ← One .md per feature
+    ideas/                   ← Pre-feature captures (unvalidated)
+    testing/
+      registry.md            ← What's covered, what's not
+    decisions/               ← Architecture Decision Records (one per decision)
     skills/
-      custom/
-      skills.yml
+      custom/                ← Project-specific Claude skills
+      skills.yml             ← Skill registry
 ```
 
-### Folder Structure Explanation
+---
 
-| File / Folder | Audience | Purpose |
+## Tiered Loading
+
+Not everything loads every session. This keeps token cost low and context relevant.
+
+| Tier | Files | When |
 |---|---|---|
-| [`README.md`](#readmemd) | Humans | Project overview, setup instructions, links to CLAUDE.md and lore |
-| [`CLAUDE.md`](#claudemd) | Claude Code | AI entry point — read every session; contains stack, rules, lore index, current focus |
-| [`lore/OG.md`](#ogmd) | Developer only 🔒 | Raw, unstructured dev journal; never AI-generated; Claude reads for vibe and intent |
-| [`lore/MISSION.md`](#missionmd) | Developer only 🔒 | The project's soul — what it is, who it's for, why it should exist; never AI-generated |
-| [`lore/CONTEXT.md`](#contextmd) | Claude Code | Session log — every AI conversation recorded: who asked, what was proposed, what was done |
-| [`lore/ADR.md`](#adrmd) | Claude Code + humans | Architecture Decision Records — what was decided, why, and what was rejected |
-| [`lore/GUARDRAILS.md`](#guardrailsmd) | Claude Code + developers | Project-specific dos and don'ts — always/never/conventions per domain |
-| [`lore/architecture.md`](#architecturemd) | Claude Code + humans | System design, infra topology, service map, data flow |
-| [`lore/architecture/models.md`](#architecturemodelsmd) | Claude Code + humans | Data models, schemas, relationships, quirks |
-| [`lore/architecture/apis.md`](#architectureapismd) | Claude Code + humans | API contracts, endpoints, auth, rate limits, external services |
-| [`lore/features/[name].md`](#featuresfeature-namemd) | Claude Code + humans | One file per committed or in-progress feature |
-| [`lore/ideas/[name].md`](#ideasidea-namemd) | Developer + Claude Code | Unvalidated captures — low friction, no strict format |
-| `lore/skills/custom/` | Claude Code | Project-specific skills written for this repo |
-| `lore/skills/skills.yml` | Claude Code | Registry of all forked/adapted skills in use — like requirements.txt |
+| **1 — Always** | `INDEX.md`, `GUARDRAILS.md`, `CONTEXT.md` | Every session via CLAUDE.md hook |
+| **2 — On-Demand** | `kanban/`, `architecture/`, `features/`, `testing/`, `decisions/` | Load only what the task requires |
+| **Never Auto** | `OG.md`, `MISSION.md`, `CHANGELOG.md` | Human or agent pulls explicitly |
 
-> 🔒 = Human-only. Claude never writes to these files.
+**Rule:** Start every session reading Tier 1 only. Load Tier 2 files when the task requires them — name which files you loaded in your session log entry.
+
+---
+
+## Agent Session Workflow
+
+A concrete sequence for any agent operating in a project with `lore`. Follow this every session, no exceptions.
+
+### Starting a session
+1. Read `lore/INDEX.md` → `lore/GUARDRAILS.md` → `lore/CONTEXT.md` (Tier 1)
+2. Note the **Focus**, **Phase**, **Open**, and **Next** fields from CONTEXT.md — this is your briefing
+3. If picking up a task: read `lore/kanban/todo.md` and `lore/kanban/inprogress.md`
+4. Load Tier 2 files only as the task requires — announce which ones you load
+
+### During a session
+- Load Tier 2 files as needed, name what you loaded
+- Move kanban tasks as their state changes — don't wait until the end
+- Log significant decisions to `decisions/` as you make them, not in bulk at session end
+- If you discover a gap in lore (missing feature doc, stale architecture), fix it as you go
+
+### Ending a session
+Do all of the following before closing:
+1. **Rewrite `CONTEXT.md` header** — Focus, Phase, Open, Next must reflect current state
+2. **Append a log entry** — compact, 3-5 lines (see CONTEXT.md contract for format)
+3. **Move kanban tasks** — anything completed goes to `done.md`; newly proposed tasks go to `backlog.md`
+4. **Update feature files** for anything that started, changed, or completed
+5. **Update `testing/registry.md`** if tests were added or removed
+6. **Write decision files** for any significant architectural choices made this session
+
+Never skip the session-end update. A lore that isn't updated after every session is a lore that lies.
 
 ---
 
@@ -75,144 +104,42 @@ Each file has a defined audience, purpose, and update rhythm.
 
 ---
 
-### `README.md`
-**Audience:** Humans — developers, contributors, stakeholders.  
-**Rule:** No AI-specific content. Keep it clean.  
-**Must include:** Project purpose, setup instructions, link to `CLAUDE.md` and `lore/`.
-
----
-
-### `CLAUDE.md`
-**Audience:** Claude Code — read automatically at the start of every session.  
-**Rule:** Keep it dense. This is the first thing Claude reads, every time.  
-**Must include:** Project name and purpose, stack, key rules, lore index, current focus, and the Session Rule.
+### `INDEX.md`
+**Audience:** Claude Code — first stop every session.
+**Purpose:** Lightweight TOC. Tells agents what exists, what tier it lives in, and any agent-proposed additions pending review.
+**Rule:** Keep it under 60 lines. Dense, not descriptive.
 
 **Template:**
 ```markdown
-# [Project Name]
+# lore Index
 
-## What This Is
-[2-3 sentences: what the project does, the stack, and who it's for]
-See `lore/MISSION.md` for the full project mission.
+**Always load:** `GUARDRAILS.md`, `CONTEXT.md`
 
-## Rules
-- [Key constraint 1]
-- [Key constraint 2]
-- See `lore/GUARDRAILS.md` for full guardrails
+## Tier 2 — Load When Relevant
+| File / Dir | Load when |
+|---|---|
+| `kanban/` | Planning work or picking up a task |
+| `architecture/` | Making structural or data model changes |
+| `features/[name].md` | Working on that specific feature |
+| `testing/registry.md` | Writing or reviewing tests |
+| `decisions/` | Making or revisiting a significant decision |
 
-## Stack
-- Backend: [e.g. Django / PostgreSQL]
-- Frontend: [e.g. Next.js / Flutter]
-- Infra: [e.g. Docker / AWS / Cloudflare]
+## Human-Only (Never auto-load)
+`OG.md` — raw dev journal  
+`MISSION.md` — project soul  
+`CHANGELOG.md` — git history (hook-generated)
 
-## lore Index
-- `MISSION.md` — full project mission and purpose (read when context matters)
-- `CONTEXT.md` — session log of all AI conversations in this project
-- `ADR.md` — architecture decision records
-- `GUARDRAILS.md` — full guardrails
-- `architecture.md` — system design and infra map
-- `architecture/models.md` — data models and schemas
-- `architecture/apis.md` — API contracts and external services
-- `features/` — active and completed features
-- `ideas/` — unvalidated ideas
-
-## Current Focus
-[What is actively being worked on right now]
-
-## Session Rule
-This project uses `lore` for AI memory. At the end of every session:
-- Log the session to `lore/CONTEXT.md` using the session entry format
-```
-
----
-
-### `OG.md` 🔒
-**Audience:** You — the developer.  
-**Rule:** Never AI-generated. Never structured. Claude never writes to this file.  
-**Purpose:** Your unfiltered thoughts on the project. Doubts, instincts, intent. Claude reads
-this for context and vibe, not instructions.
-
-**Prompt to get started:** *"What's going on in my head about this project right now?"*
-
----
-
-### `MISSION.md` 🔒
-**Audience:** You — the developer. Claude reads it, never writes it.  
-**Rule:** Never AI-generated. This is the human's document.  
-**Purpose:** The soul of the project. Not operational detail — the *why*. Claude reads this
-when it needs to make decisions that require understanding what the project is trying to be,
-not just what it's currently doing.
-
-**Must include:** What is this? Who is it for? What problem does it solve? Why should it exist?
-What does success look like?
-
-**Prompt to write it:** *"If I had to explain this project to someone who had never heard of it,
-and I wanted them to understand not just what it does but why it matters — what would I say?"*
-
----
-
-### `CONTEXT.md`
-**Audience:** Claude Code — this is the AI's memory of every conversation in the project.  
-**Rule:** Appended by Claude at the end of every session. Never delete entries. Never rewrite history.  
-**Purpose:** A chronological log of every AI session — who asked, what was proposed, what was
-actually done. This is how any AI agent (or a new developer) traces back the full history of
-how the project was built, decision by decision, session by session.
-
-When a new AI session starts, it reads CONTEXT.md to understand what's happened before —
-no need to re-read the entire codebase.
-
-**Template:**
-```markdown
-# Context
-
-Chronological log of all AI-assisted sessions in this project.
-
----
-
-### YYYY-MM-DD HH:MM — [Dev Name]
-
-**Asked:** [What the developer requested or the problem they described]
-
-**Proposed:** [What the AI suggested or planned]
-
-**Acted On:**
-- [What was actually implemented or changed]
-- [Files touched, commands run, decisions made]
-
-**Outcome:** [Result — what worked, what didn't, what's left open]
-
----
-```
-
-**How to populate each session entry:**
-- **Date/Time:** Use the current date and time at session end
-- **Dev Name:** Pull from `git config user.name`
-- **Asked:** Summarize what the developer asked for — capture the intent, not a transcript
-- **Proposed:** What the AI suggested before acting — the plan, the approach
-- **Acted On:** What was actually done — files created, code written, configs changed
-- **Outcome:** What's the state now? Did it work? Anything left unfinished?
-
----
-
-### `ADR.md`
-**Audience:** Claude Code + humans.  
-**Purpose:** Architecture Decision Records. Prevents Claude from re-suggesting things already considered.  
-**Rule:** Every meaningful decision gets an entry — what was chosen, why, and what lost.
-
-**Entry format:**
-```markdown
-## [Decision Title] — [YYYY-MM-DD]
-**Decided:** [What was chosen]
-**Why:** [The reasoning]
-**Rejected:** [What else was considered and why it lost]
+## Proposed Additions
+Agent-suggested lore expansions pending human review. If approved, they become canonical.
+- [none yet]
 ```
 
 ---
 
 ### `GUARDRAILS.md`
-**Audience:** Claude Code + developers.  
-**Purpose:** Project-wide rules — what to always do, never do, and how conventions work.  
-**Format:** Single file. Split by domain with headers if the project needs it.
+**Audience:** Claude Code + developers — always loaded.
+**Purpose:** Project-wide rules. What to always do, never do, and how conventions work here.
+**Rule:** The most read file after CONTEXT.md. Keep it honest and current. Split by domain if needed.
 
 **Template:**
 ```markdown
@@ -225,59 +152,185 @@ Chronological log of all AI-assisted sessions in this project.
 - [Pattern to never use in this project]
 
 ## Conventions
-- [Project-specific naming, structure, or style decisions]
+- [Naming, structure, or style decisions specific to this project]
 
 ## Backend
-- [Backend-specific rules if needed]
+- [Backend-specific rules]
 
 ## Frontend
-- [Frontend-specific rules if needed]
+- [Frontend-specific rules]
 ```
 
 ---
 
-### `architecture.md`
-**Audience:** Claude Code + humans.  
-**Purpose:** System design, infra topology, how services connect.  
-**Include:** Service map, data flow, deployment setup, external dependencies, anything
-non-obvious about how the system is structured.
+### `CONTEXT.md`
+**Audience:** Claude Code — always loaded.
+**Purpose:** Dense current state + chronological session log. This is how any agent picks up where the last one left off without re-reading the whole codebase.
+**Rule:** The header block is rewritten each session. Log entries are appended, never deleted. Keep entries compact — 3-5 lines max.
+
+**Template:**
+```markdown
+# Context
+
+**Focus:** [what's actively being built — one line]
+**Phase:** [Alpha / Beta / Prod / R&D]
+**Open:** [open thread], [open thread]
+**Next:** [next task], [next task]
+
+---
+
+## Log
+
+### YYYY-MM-DD — [Dev Name]
+[2-3 sentence summary of what was asked, what was done, and what the state is now]
+Loaded: `architecture/models.md`, `features/auth.md`
+Left open: [anything unfinished or deferred]
+
+---
+```
+
+**Multi-agent log format** (Hermes orchestrated sessions):
+```markdown
+### YYYY-MM-DD — [Dev Name] / [sub-agent]
+[2-3 sentence summary]
+Loaded: `architecture/models.md`
+Task: #[ID] — completed / in progress
+Left open: [anything unfinished]
+```
+
+Format: `[Human] / [Sub-agent]` makes it always clear who orchestrated and who executed.
+
+**How to write a good log entry:**
+- Summarize intent + outcome in 2-3 sentences. Not a transcript.
+- List files loaded this session so the next agent knows what context was available.
+- Flag anything left open so the next session starts where this one left off.
+
+---
+
+### `OG.md` 🔒
+**Audience:** You — the developer. Claude reads it, never writes it.
+**Rule:** Never AI-generated. Never structured. This is your unfiltered voice.
+**Purpose:** Raw dev journal. Doubts, instincts, hunches, things you want to remember but aren't ready to formalize. Claude reads this to understand your intent and vibe when making judgment calls.
+
+**Prompt to start:** *"What's going on in my head about this project right now?"*
+
+---
+
+### `MISSION.md` 🔒
+**Audience:** You — the developer. Claude reads it, never writes it.
+**Rule:** Never AI-generated. This is the soul of the project.
+**Purpose:** The *why*. Not operational detail — why it should exist, who it's for, what success looks like. Claude reads this when making decisions that require understanding what the project is trying to *be*, not just what it's currently doing.
+
+**Must answer:** What is this? Who is it for? What problem does it solve? Why should it exist? What does success look like?
+
+**Prompt to write it:** *"If I had to explain this to someone who'd never heard of it, and I wanted them to understand not just what it does but why it matters — what would I say?"*
+
+---
+
+### `CHANGELOG.md`
+**Audience:** Humans + Claude Code — never auto-loaded, pull on demand.
+**Purpose:** Auto-generated commit history. The evolution of the product in git form.
+**Rule:** Written by the `post-commit` git hook, not by agents or humans. Never manually edited.
+
+**Format (auto-generated):**
+```markdown
+# Changelog
+
+## YYYY-MM-DD HH:MM — [short hash] — [commit message]
+[commit body if present]
+
+---
+```
+
+---
+
+### `kanban/`
+**Audience:** Claude Code + humans — load when planning or picking up work.
+**Purpose:** The agent work queue. Human drops tickets in backlog. Agents pick up from todo, move through in-progress, land in done.
+**Rule:** IDs are permanent. Once assigned, an ID never changes even when the ticket moves. Agents must update kanban when they start or finish a task.
+
+**`kanban/backlog.md`** — captured, not yet scheduled:
+```markdown
+# Backlog
+
+- [ ] #001 [Task description] `[source: JB, YYYY-MM-DD]`
+- [ ] #002 [Task description] `[source: Agent, YYYY-MM-DD]`
+```
+
+**`kanban/todo.md`** — scheduled, not started:
+```markdown
+# Todo
+
+- [ ] #001 [Task description] `[scheduled: YYYY-MM-DD]`
+```
+
+**`kanban/inprogress.md`** — active:
+```markdown
+# In Progress
+
+# Solo session
+- [~] #001 [Task description] `[started: YYYY-MM-DD, assigned: claude-code]`
+
+# Hermes orchestrated — multiple agents
+- [~] #002 [Task A] `[started: YYYY-MM-DD, assigned: claude-code]`
+- [~] #003 [Task B] `[started: YYYY-MM-DD, assigned: codex]`
+```
+
+**`kanban/done.md`** — completed:
+```markdown
+# Done
+
+- [x] #001 [Task description] `[completed: YYYY-MM-DD, by: claude-code]`
+```
+
+**Agent kanban rules:**
+1. When picking up a task: move from `todo.md` to `inprogress.md`, add started date + `assigned: [your-name]`
+2. When finishing a task: move from `inprogress.md` to `done.md`, add completed date + `by: [your-name]`
+3. When proposing a new task: add to `backlog.md` with `source: Agent`
+4. Never delete entries — always move them
+5. In orchestrated sessions: Hermes assigns tasks, sub-agents never self-assign from todo
+
+---
+
+### `architecture/overview.md`
+**Audience:** Claude Code + humans — load when making structural changes.
+**Purpose:** How the system is designed. Service map, data flow, infra topology, external dependencies.
+**Rule:** Updated by agent when architecture changes. Covers the *shape* of the system, not every field.
 
 ---
 
 ### `architecture/models.md`
-**Audience:** Claude Code + humans.  
-**Purpose:** Data models and schemas.  
-**Include:** Field names, types, relationships, constraints, quirks (e.g. soft deletes,
-multi-tenancy patterns, custom managers, naming conventions).
+**Audience:** Claude Code + humans.
+**Purpose:** Data models and schemas — field names, types, relationships, constraints, quirks.
+**Include:** Soft deletes, multi-tenancy patterns, custom managers, naming conventions, anything non-obvious.
 
 ---
 
 ### `architecture/apis.md`
-**Audience:** Claude Code + humans.  
-**Purpose:** API contracts — internal endpoints and external services.  
-**Include:** Base URLs, auth method, key endpoints, known gotchas, rate limits, versioning.
+**Audience:** Claude Code + humans.
+**Purpose:** API contracts — internal endpoints and external services.
+**Include:** Base URLs, auth method, key endpoints, rate limits, versioning, known gotchas.
 
 ---
 
 ### `features/[feature-name].md`
-**Audience:** Claude Code + humans.  
+**Audience:** Claude Code + humans — load when working on that feature.
 **Purpose:** One file per committed or in-progress feature.
 
 **Template:**
 ```markdown
 # Feature: [Name]
 
-## Status
-[ ] Idea  [ ] In Progress  [ ] Done  [ ] Paused
+**Status:** Idea / In Progress / Done / Paused
 
 ## What It Does
-[Plain description — what problem it solves and how]
+[What problem it solves and how]
 
 ## Edge Cases
 - [Known edge case]
 
 ## Open Questions
-- [Unresolved]
+- [Unresolved question]
 
 ## Notes
 [Anything else relevant]
@@ -286,29 +339,77 @@ multi-tenancy patterns, custom managers, naming conventions).
 ---
 
 ### `ideas/[idea-name].md`
-**Audience:** You — and eventually Claude Code.  
-**Purpose:** Pre-feature. Unvalidated. Low-friction capture.  
-**Rule:** No strict format. Write enough to remember the idea and the instinct behind it.
-Promote to `features/` when it's committed.
+**Audience:** You + Claude Code.
+**Purpose:** Pre-feature, unvalidated. Low friction capture.
+**Rule:** No strict format. Write enough to remember the idea and the instinct behind it. Promote to `features/` when committed.
+
+---
+
+### `testing/registry.md`
+**Audience:** Claude Code — load when writing or reviewing tests.
+**Purpose:** Living map of test coverage. Agent updates this when tests are added or removed.
+
+**Template:**
+```markdown
+# Test Registry
+
+## Covered
+| Area | Test file | Type | Notes |
+|---|---|---|---|
+| Auth / login | `tests/test_auth.py` | Unit | Covers happy path + wrong password |
+
+## Not Covered
+- Payment webhook failure cases
+- Concurrent session handling
+
+## Known Gaps
+- [Gap that's accepted and won't be covered]
+```
+
+---
+
+### `decisions/[decision-slug].md`
+**Audience:** Claude Code + humans — load when making or revisiting a significant decision.
+**Purpose:** Architecture Decision Records. Prevents re-litigating what's already been decided.
+**Rule:** One file per decision. Filename is a short kebab-case slug of the decision title.
+
+**Template:**
+```markdown
+# [Decision Title]
+
+**Date:** YYYY-MM-DD
+**Status:** Decided / Superseded / Under Review
+
+## Decided
+[What was chosen]
+
+## Why
+[The reasoning — constraints, tradeoffs, context]
+
+## Rejected
+[What else was considered and why it lost]
+
+## Consequences
+[What this means going forward — what gets easier, what gets harder]
+```
 
 ---
 
 ### `skills/custom/`
-Project-specific Claude skills. Same SKILL.md format.  
-Use for patterns unique to this repo: how views are written, how errors are handled,
-how migrations work, how tests are structured.
+Project-specific Claude skills. Same SKILL.md format.
+Use for patterns unique to this repo: how views are written, how errors are handled, how migrations work, how tests are structured.
 
 ---
 
 ### `skills/skills.yml`
-Registry of all forked or adapted skills in use — like `requirements.txt` but for skills.  
-Each entry should list the skill name, source, and any notes about what was customized.
+Registry of all skills in use — like `requirements.txt` for Claude skills.
 
 **Format:**
 ```yaml
 skills:
   - name: lore
-    source: https://github.com/anthropics/skills/lore
+    version: 2.1.0
+    source: https://github.com/joabeliot/lore
     notes: using as-is
 
   - name: my-custom-skill
@@ -320,19 +421,14 @@ skills:
 
 ## Session Update Rule
 
-At the end of every session, Claude appends a session entry to `CONTEXT.md`. This is
-non-negotiable — it's what makes `lore` a living memory instead of a one-time setup.
+At the end of every session, Claude must:
 
-**What Claude logs after every session:**
-
-| Field | Source | Description |
-|---|---|---|
-| Date/Time | System clock | When the session ended |
-| Dev Name | `git config user.name` | Who was driving |
-| Asked | Conversation | What the developer requested — intent, not transcript |
-| Proposed | Conversation | What the AI suggested before acting |
-| Acted On | Conversation + file changes | What was actually done — files, code, decisions |
-| Outcome | End state | What worked, what didn't, what's left open |
+1. **Update `CONTEXT.md` header** — rewrite the Focus, Phase, Open, Next lines to reflect current state
+2. **Append a log entry** to `CONTEXT.md` — compact, 3-5 lines, what was done and what's open
+3. **Update kanban** — move any tasks that changed state
+4. **Update feature files** if a feature was started, completed, or changed
+5. **Log decisions** to `decisions/` if a significant architectural choice was made
+6. **Update `testing/registry.md`** if tests were added or removed
 
 **What Claude never touches:**
 
@@ -340,6 +436,148 @@ non-negotiable — it's what makes `lore` a living memory instead of a one-time 
 |---|---|
 | `OG.md` | Human-only. Always. |
 | `MISSION.md` | Human-only. Always. |
+| `CHANGELOG.md` | Hook-generated. Always. |
+
+---
+
+## Multi-Agent Protocol (Hermes)
+
+When Hermes orchestrates multiple sub-agents (Claude Code, Codex, Gemini CLI), `lore` becomes the shared state layer between all of them. This protocol keeps every agent synchronized and prevents conflicts.
+
+### Session Types
+
+| Type | Who | Protocol |
+|---|---|---|
+| **Solo** | JB + one agent | Standard Agent Session Workflow |
+| **Orchestrated** | Hermes + sub-agents | This protocol |
+
+### Hermes Startup Protocol
+
+When Hermes begins an orchestration session:
+1. Read Tier 1: `INDEX.md` → `GUARDRAILS.md` → `CONTEXT.md`
+2. Read `kanban/todo.md` and `kanban/inprogress.md` — understand what's ready and what's already active
+3. Build the delegation plan: which tasks to assign, to which agents, in what order
+4. Assign tasks via delegation packets (see below)
+5. Monitor sub-agents; merge lore when they report back
+
+### Delegation Packet
+
+What Hermes sends to each sub-agent when delegating a task. Every sub-agent receives this before starting:
+
+```
+Task: #[ID] [description]
+
+Context (paste CONTEXT.md header):
+  Focus: ...
+  Phase: ...
+  Open: ...
+  Next: ...
+
+Guardrails: [paste GUARDRAILS.md or the sections relevant to this task]
+
+Load these lore files: [list Tier 2 files relevant to this task]
+
+Produce: [clear output spec — what files to write, what endpoints to build, what tests to write]
+
+On completion you must:
+  1. Move #[ID] from kanban/inprogress.md to kanban/done.md (add completed date + by: [your-name])
+  2. Append a log entry to lore/CONTEXT.md using the multi-agent format (JB / [your-name])
+  3. Update any feature files, decisions, or test registry that changed
+  4. Report back to Hermes: task ID, outcome, files changed, what's left open
+```
+
+### Sub-Agent Completion Protocol
+
+When a sub-agent finishes, it must do all of the following before reporting back to Hermes:
+
+1. Move task from `kanban/inprogress.md` → `kanban/done.md`
+2. Append a log entry to `CONTEXT.md` using the multi-agent format
+3. Update any `features/`, `decisions/`, or `testing/registry.md` that changed
+4. Report back to Hermes:
+   - Task ID and status (completed / partial / blocked)
+   - Files changed
+   - Anything left open or deferred
+   - Any blockers that need Hermes's attention
+
+### Concurrency Rules
+
+These rules prevent lore conflicts when multiple agents are active:
+
+- **One agent per task** — Hermes assigns; sub-agents never self-assign
+- **Sequential lore writes** — if two agents finish near-simultaneously, they queue writes; Hermes merges if needed
+- **No simultaneous file edits** — two agents must never write to the same file at the same time; Hermes coordinates timing
+- **`kanban/done.md` is append-only** — safe for multiple agents to append sequentially without conflict
+- **`CONTEXT.md` header is Hermes's** — sub-agents append log entries; only Hermes rewrites the header block at session end
+
+### Hermes Orchestration Loop
+
+```
+1. Read lore Tier 1 + kanban/todo.md + kanban/inprogress.md
+2. Build task assignments based on todo + current context
+3. Send delegation packets to sub-agents (can run in parallel)
+4. Receive completion reports from sub-agents
+5. Merge any lore conflicts
+6. Rewrite CONTEXT.md header with current state
+7. Repeat or close session
+```
+
+### What Hermes Owns vs Sub-Agents
+
+| Responsibility | Hermes | Sub-Agent |
+|---|---|---|
+| `CONTEXT.md` header | Rewrites at session end | Appends log entries only |
+| `kanban/` task assignment | Assigns from todo | Never self-assigns |
+| `kanban/` task movement | Monitors overall state | Moves their own tasks |
+| `features/`, `decisions/`, `testing/` | — | Updates files relevant to their task |
+| Lore conflict resolution | Merges conflicts | Reports conflicts upward |
+
+---
+
+## Hook Automation
+
+`lore` uses git hooks to automate what agents shouldn't have to manually track.
+
+### `post-commit` → `lore/CHANGELOG.md`
+
+The `post-commit` hook appends every commit to `CHANGELOG.md` automatically. Install it once per project with:
+
+```bash
+# From the lore repo root
+./install.sh --hooks /path/to/your/project
+```
+
+Or manually copy `hooks/post-commit.sh` to your project's `.git/hooks/post-commit` and make it executable:
+
+```bash
+cp /path/to/lore/hooks/post-commit.sh your-project/.git/hooks/post-commit
+chmod +x your-project/.git/hooks/post-commit
+```
+
+### What hooks do vs what agents do
+
+| Responsibility | Hook | Agent |
+|---|---|---|
+| `CHANGELOG.md` | Auto-appends on every commit | Never touches |
+| `CONTEXT.md` | — | Updates header + appends log |
+| `kanban/` | — | Moves tasks between files |
+| `architecture/` | — | Updates when structure changes |
+| `testing/registry.md` | — | Updates when tests change |
+| `decisions/` | — | Creates new file per decision |
+
+---
+
+## Agent Creative Additions
+
+Agents are allowed — and encouraged — to propose creative additions to `lore` when they'd serve the project. A creative addition might be:
+- A new subfolder not in the canonical structure (e.g., `lore/incidents/` for postmortems)
+- A new field or section in an existing file
+- A project-specific convention worth formalizing
+
+**Rule:**
+1. If you think a creative addition would help the project, **build it and use it**
+2. Add an entry to `lore/INDEX.md` under `Proposed Additions` describing what you added and why
+3. The human reviews and decides whether it becomes canonical in the lore framework repo
+4. Never silently add to the canonical folder structure — only to `Proposed Additions`
 
 ---
 
@@ -349,20 +587,20 @@ When asked to init `lore` on a new project:
 
 1. Create the full folder structure
 2. Stub every file with its template
-3. Fill `CLAUDE.md` with what's known: project name, stack, purpose — **including the Session Rule**
+3. Fill `CLAUDE.md` with what's known: project name, stack, purpose, Session Rule, and lore Index
 4. Leave `OG.md` blank with the prompt: *"What's on your mind about this project?"*
 5. Leave `MISSION.md` blank with the prompt: *"What is this project and why should it exist?"*
-6. Set `CONTEXT.md` header to: `# Context` with the template ready for the first session entry
-7. Ask the developer to confirm: stack, key rules, and current focus before finalizing `CLAUDE.md`
+6. Set `CONTEXT.md` header with placeholder values and an empty log section
+7. Initialize `kanban/backlog.md` with an empty list, others as stubs
+8. Ask the developer to confirm: stack, key rules, and current focus before finalizing `CLAUDE.md`
 
-**What NOT to invent for a new project:**
-- Do not populate `architecture/models.md` with field names or schemas — stub only
-- Do not populate `architecture/apis.md` with endpoint tables — stub only
-- Do not create files inside `features/` or `ideas/` — leave the directories empty
-- Do not add `ADR.md` entries unless a decision was explicitly stated
+**What NOT to invent:**
+- Do not populate `architecture/models.md` with field names — stub only
+- Do not populate `architecture/apis.md` with endpoints — stub only
+- Do not create files inside `features/`, `ideas/`, or `decisions/` — leave dirs empty
+- Do not add `testing/registry.md` coverage rows — stub only
 
-The reason: inventing project content contaminates `lore` with hallucinated facts that look real.
-It's better to leave a field blank than to fill it with a confident guess.
+Inventing content contaminates `lore` with hallucinated facts that look real. A blank stub is better than a confident wrong guess.
 
 ---
 
@@ -371,67 +609,59 @@ It's better to leave a field blank than to fill it with a confident guess.
 When pointed at a repo that has no `lore`:
 
 **Step 1 — Check for CLAUDE.md**
-- If `CLAUDE.md` exists: inject the `lore` block into it (Session Rule + lore Index). Do not overwrite the rest.
-- If `CLAUDE.md` does not exist: create it from the template.
+- If `CLAUDE.md` exists: inject the lore block (Session Rule + lore Index) without overwriting the rest
+- If it doesn't exist: create it from the template
 
-**Step 2 — Read the repo**  
-Scan `README.md`, `CLAUDE.md` (if any), package files (`package.json`, `requirements.txt`,
-`pubspec.yaml`, `Dockerfile`, etc.), and folder structure.
+**Step 2 — Read the repo**
+Scan `README.md`, package files (`requirements.txt`, `package.json`, `pubspec.yaml`, `Dockerfile`), and folder structure to infer stack and architecture.
 
 **Step 3 — Generate `lore/`** using canonical paths only:
-- `lore/architecture.md` from inferred system design
-- `lore/architecture/models.md` from model and schema files found
-- `lore/architecture/apis.md` from route files, serializers, or API configs found
+- `lore/architecture/overview.md` from inferred system design
+- `lore/architecture/models.md` from model/schema files found
+- `lore/architecture/apis.md` from route/serializer files found
 - `lore/CONTEXT.md` with header ready for first session entry
-- `lore/OG.md` left blank with the human prompt
-- `lore/MISSION.md` left blank with the human prompt
+- `lore/GUARDRAILS.md` with reasonable defaults from what you found
+- `lore/OG.md` and `lore/MISSION.md` left blank with human prompts
+- `lore/kanban/` stubbed with empty files
 
-**Step 4 — Flag gaps**  
-Consolidate everything that couldn't be inferred into a numbered list. Don't silently skip.
+**Step 4 — Flag gaps**
+Consolidate everything that couldn't be inferred into a numbered list. Never silently skip.
 
-**Critical: never invent custom subdirectories.** The `lore/` folder structure is fixed — do not
-create subdirectories like `lore/apps/`, `lore/config/`, or `lore/infra/` to mirror the repo's
-own structure. All inferred content goes into the canonical files. A non-standard `lore/` layout
-breaks compatibility with every other Claude instance that reads it.
+**Critical: never invent subdirectories** outside the canonical structure. All inferred content goes into canonical files. A non-standard `lore/` layout breaks compatibility with every agent that reads it.
 
 ---
 
 ## Web-to-Code Bridge Workflow
-
-The gap between Claude Web (ideation) and Claude Code (execution) is context.
-This workflow keeps them in sync.
 
 ```
 1. Think through ideas, architecture, or features in Claude Web
 2. Ask Claude Web to generate or update a lore file from the discussion
 3. Paste the output into the correct lore file in your repo
 4. Claude Code picks it up next session via CLAUDE.md
-5. After building, Claude Code logs the session to CONTEXT.md
+5. After building, Claude Code updates CONTEXT.md and kanban
 6. Commit lore alongside code changes
 ```
 
-**Rule:** `OG.md` and `MISSION.md` are always written by the human. Every other file can be
-AI-generated or AI-updated — but should be human-reviewed before committing.
+**Rule:** `OG.md` and `MISSION.md` are always written by the human. Every other file can be AI-generated or AI-updated — but should be human-reviewed before committing.
 
 ---
 
 ## Keeping `lore` Healthy
 
-- `CONTEXT.md` is appended by Claude every session — don't let it get skipped
-- Add an `ADR.md` entry whenever something significant is decided or rejected
-- Promote ideas from `ideas/` to `features/` when they become committed work
-- Keep `CLAUDE.md` current — stale focus is worse than no focus
+- `CONTEXT.md` header is rewritten every session — stale focus is worse than no focus
+- Log entries are appended every session — never skip it
+- Kanban always reflects reality — if something's done, move it
+- Feature files get updated when features change — not just when they're created
+- `testing/registry.md` grows with the test suite
+- `decisions/` prevents re-litigating what's already settled
+- Commit `lore/` alongside code — they should move together
 
 ---
 
 ## Evolving This Skill
 
-This skill lives at `~/.claude/skills/lore/SKILL.md` globally and optionally at
-`lore/skills/custom/lore.md` per project.
+This skill lives at `~/.claude/skills/lore/SKILL.md` globally, installed from the lore repo.
 
-Treat it like code — version it, improve it, fork it per project if the project needs
-a different flavor. When the system evolves (new file types, new workflows, new patterns),
-update this file to reflect it.
+When an agent proposes a creative addition that JB approves, it gets added to this canonical SKILL.md and versioned. Projects then update by running `./install.sh` again.
 
-The goal: any project with `lore/` is immediately legible to any Claude instance,
-any developer, and any future agent — with zero onboarding friction.
+The goal: any project with `lore/` is immediately legible to any Claude instance, any developer, and any future agent — with zero onboarding friction.
