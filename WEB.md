@@ -1,7 +1,7 @@
 ---
 name: lore
 description: Web Claude workflow for lore. Use this skill when working in Claude Web on a project that uses lore. Covers how to run ideation sessions, generate Lore Packages, and hand off structured output to the conductor or solo agent for execution.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # lore — Web Claude Workflow
@@ -191,6 +191,7 @@ The conductor (Hermes) receives the Lore Package and processes it in this order:
 
 ## Tips for Web Sessions
 
+- **Lore is the bible of this project.** Don't suggest anything that contradicts what's already decided there. If you think lore should change, flag it — don't silently contradict it.
 - Paste the relevant lore files at the start: CONTEXT.md, GUARDRAILS.md, the feature or architecture file you're working through
 - The more context you give Web Claude, the better the Lore Package it generates
 - If a decision is complex, ask Web Claude to draft the `decisions/` file content during the session — not just at the end

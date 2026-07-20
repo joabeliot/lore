@@ -4,6 +4,8 @@ A `lore/` folder you commit to your project. It's the single source of truth —
 
 Not a wiki. Not docs. The living interface between humans and the codebase.
 
+> **📖 Lore is the bible of this project.** Check it before every action. Update it after every change. If it's not in lore, it didn't happen. If lore says it, it's law. Every session starts and ends here.
+
 ---
 
 ## The Problem

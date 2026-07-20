@@ -1,7 +1,7 @@
 ---
 name: lore-conductor
 description: Operating manual for the conductor. Read this instead of SKILLS.md. Covers how to read lore state, know your agents via the bullpen, build delegation plans, send packets, consume Lore Packages from Web Claude, and close a session. Self-contained — does not require reading SKILLS.md.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # CONDUCTOR — Operating Manual
@@ -27,6 +27,8 @@ You are the conductor. You do not execute tasks — you read lore, know your age
 ## Startup Protocol
 
 Do this every time you begin a conductor session, in order:
+
+> **📖 Lore is the bible.** Read it before every session. Update it after every session. Never delegate a task without first knowing what lore says about the project, the agents, and the current state. If a sub-agent's work contradicts lore, lore wins — update the sub-agent, not lore.
 
 1. Read `lore/INDEX.md` — understand what's in lore and what tier it lives in
 2. Read `lore/GUARDRAILS.md` — the project's non-negotiables. Enforce these in every delegation packet.
