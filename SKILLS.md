@@ -296,6 +296,29 @@ Format: `[Conductor] / [Sub-agent]` — replace with actual names (e.g. `Jerry /
 4. Never delete entries — always move them
 5. In conductor sessions: Hermes assigns tasks, sub-agents never self-assign from todo
 
+### `scripts/lore` — Kanban CLI
+
+A Python command-line tool for managing the kanban board. Installed by install.sh (`--lore-script <project-path>`) or directly from `scripts/lore` in the lore repo.
+
+**Commands:**
+```sh
+lore kanban add "description"          # Add ticket to backlog
+lore kanban schedule #003              # Mark as ready
+lore kanban start #003 --agent agy     # Start work
+lore kanban done #003                  # Complete ticket
+lore kanban list                       # Show all
+lore kanban list --state inprogress    # Filter by state
+```
+
+**How it works:**
+- Scans all 4 kanban files to find the highest existing ID, then auto-increments
+- Moves tasks by removing them from the source file and appending to the destination
+- Preserves metadata tags (`source`, `scheduled`, `assigned`, `completed`) through moves
+- Auto-adds `started` and `completed` dates based on the current date
+- Appends new tasks to backlog with `source: Agent` by default
+
+**Agent usage:** Use `lore kanban start #003 --agent agy` instead of manually editing kanban files. The script handles the ID counting, tag format, and cross-file movement correctly.
+
 ---
 
 ### `architecture/overview.md`

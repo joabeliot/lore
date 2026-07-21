@@ -1,0 +1,336 @@
+#!/usr/bin/env python3
+"""lore — The lore kanban CLI.
+
+Manage lore kanban boards from the command line.
+
+Usage:
+  lore kanban add <description>              Add a ticket to backlog
+  lore kanban add <description> --source JB  Add with source attribution
+  lore kanban schedule <id>                   Move backlog -> todo
+  lore kanban start <id> [--agent NAME]       Move todo -> inprogress
+  lore kanban done <id>                       Move inprogress -> done
+  lore kanban list [--state STATE]            Show tickets (default: all)
+
+Location: Run from root of a lore-initialized project (lore/ dir required).
+"""
+
+import argparse
+import os
+import re
+import sys
+from datetime import date
+from pathlib import Path
+
+
+# ── File paths ──────────────────────────────────────────────────────────────
+
+KANBAN_DIR = "lore/kanban"
+
+FILES = {
+    "backlog": "backlog.md",
+    "todo": "todo.md",
+    "inprogress": "inprogress.md",
+    "done": "done.md",
+}
+
+
+def kanban_path(state: str) -> Path:
+    return Path(KANBAN_DIR) / FILES[state]
+
+
+STATE_LABEL = {
+    "backlog": "backlog",
+    "todo": "todo",
+    "inprogress": "in progress",
+    "done": "done",
+}
+
+STATE_ORDER = ["backlog", "todo", "inprogress", "done"]
+
+# ── Parse helpers ───────────────────────────────────────────────────────────
+
+TASK_RE = re.compile(
+    r"^- (?P<box>\[.\]) (?P<rest>.+)$", re.MULTILINE
+)
+
+# Matches tags like [source: JB, 2026-07-20] or [scheduled: 2026-07-21]
+TAG_RE = re.compile(r"`\[(?P<key>[^:]+):\s*(?P<value>[^\]]*)\]`")
+
+ID_RE = re.compile(r"#(\d+)")
+
+
+def parse_tasks(text: str):
+    """Yield (id_str, box, rest) for each task line in text."""
+    for m in TASK_RE.finditer(text):
+        rest = m.group("rest")
+        id_m = ID_RE.search(rest)
+        if id_m:
+            yield (id_m.group(0), m.group("box"), rest)
+
+
+def highest_id(lines: dict[str, str]) -> int:
+    """Find the highest ticket ID across all kanban files."""
+    max_id = 0
+    for text in lines.values():
+        for id_str, _, _ in parse_tasks(text):
+            num = int(id_str.lstrip("#"))
+            max_id = max(max_id, num)
+    return max_id
+
+
+def read_all() -> dict[str, str]:
+    """Read all kanban files. Returns dict keyed by state name."""
+    result = {}
+    for state in STATE_ORDER:
+        p = kanban_path(state)
+        if p.exists():
+            result[state] = p.read_text(encoding="utf-8")
+        else:
+            result[state] = f"# {FILES[state].removesuffix('.md').title()}\n\n"
+    return result
+
+
+def write_state(state: str, text: str):
+    """Write a single kanban file."""
+    p = kanban_path(state)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(text, encoding="utf-8")
+
+
+def read_state(state: str) -> str:
+    return read_all()[state]
+
+
+def validate_lore_dir():
+    """Exit with error if we're not in a lore project."""
+    if not Path(KANBAN_DIR).exists():
+        print(
+            f"❌ No lore/kanban/ directory found here ({Path(KANBAN_DIR).resolve()}).",
+            file=sys.stderr,
+        )
+        print("   Run this from the root of a lore-initialized project.", file=sys.stderr)
+        sys.exit(1)
+
+
+# ── Format helpers ──────────────────────────────────────────────────────────
+
+
+def format_task(id_str: str, box: str, rest_body: str, tags: str | None) -> str:
+    """Format a single task line, preserving existing tags."""
+    body = rest_body.strip()
+    if body.startswith("#"):
+        # Already starts with an ID
+        parts = body.split(" ", 1)
+        desc = parts[1] if len(parts) > 1 else ""
+    else:
+        desc = body
+
+    if tags:
+        return f"- {box} {id_str} {desc} `{tags}`"
+    else:
+        return f"- {box} {id_str} {desc}"
+
+
+def build_header(state: str) -> str:
+    """Return the header block for a kanban file."""
+    if state == "backlog":
+        return "# Backlog\n\nItems captured but not yet scheduled.\n\n"
+    elif state == "todo":
+        return "# Todo\n\nScheduled and ready to start.\n\n"
+    elif state == "inprogress":
+        return "# In Progress\n\n"
+    elif state == "done":
+        return "# Done\n\n"
+    return ""
+
+
+def append_line_to(state: str, line: str):
+    """Append a line to a kanban file (before trailing newlines)."""
+    text = read_state(state)
+    text = text.rstrip("\n") + "\n" + line + "\n"
+    write_state(state, text)
+
+
+def remove_line_from(state: str, id_str: str) -> tuple[str, str] | None:
+    """Remove a task from a kanban file by ID. Returns (box, rest) or None."""
+    text = read_state(state)
+    lines = text.splitlines(keepends=True)
+    new_lines = []
+    removed = None
+    for line in lines:
+        m = TASK_RE.match(line)
+        if m:
+            rest = m.group("rest")
+            id_m = ID_RE.search(rest)
+            if id_m and id_m.group(0) == id_str:
+                removed = (m.group("box"), rest)
+                continue
+        new_lines.append(line)
+    write_state(state, "".join(new_lines))
+    return removed
+
+
+def extract_tags(rest: str) -> dict[str, str]:
+    """Extract metadata tags from a task line. Returns {key: value}."""
+    tags = {}
+    for m in TAG_RE.finditer(rest):
+        tags[m.group("key")] = m.group("value")
+    return tags
+
+
+def strip_tags(rest: str) -> str:
+    """Remove all `[key: value]` tags from a line, return clean description."""
+    txt = TAG_RE.sub("", rest)
+    # Also remove the ID (#001) for the description
+    txt = ID_RE.sub("", txt, count=1)
+    return txt.strip()
+
+
+def tag_str(tags: dict[str, str]) -> str:
+    """Format tags dict back into a single string e.g. `[source: JB, 2026-07-21]`."""
+    parts = []
+    for key, val in tags.items():
+        parts.append(f"[{key}: {val}]")
+    return " ".join(parts)
+
+
+# ── Commands ────────────────────────────────────────────────────────────────
+
+
+def cmd_add(args):
+    """Add a ticket to backlog."""
+    lines = read_all()
+    next_id = highest_id(lines) + 1
+    id_str = f"#{next_id:03d}"
+    source = args.source or "Agent"
+    today = date.today().isoformat()
+    line = f"- [ ] {id_str} {args.description} `[source: {source}, {today}]`"
+    append_line_to("backlog", line)
+    print(f"✅ Added #{next_id:03d} to backlog")
+    print(f"   {args.description}")
+    print(f"   Source: {source}")
+
+
+def cmd_schedule(args):
+    """Move backlog -> todo."""
+    result = remove_line_from("backlog", args.id)
+    if not result:
+        print(f"❌ Task {args.id} not found in backlog.", file=sys.stderr)
+        sys.exit(1)
+    box, rest = result
+    today = date.today().isoformat()
+    desc = strip_tags(rest)
+    # Preserve source tag; add scheduled tag
+    source_match = re.search(r"`\[source: ([^\]]*)\]`", rest)
+    source_part = source_match.group(1) if source_match else f"Agent, {today}"
+    rebuild_tags = f"`[source: {source_part}]` `[scheduled: {today}]`"
+    line = f"- [ ] {args.id} {desc} {rebuild_tags}"
+    append_line_to("todo", line)
+    print(f"✅ {args.id} scheduled → todo")
+
+
+def cmd_start(args):
+    """Move todo -> inprogress."""
+    result = remove_line_from("todo", args.id)
+    if not result:
+        print(f"❌ Task {args.id} not found in todo.", file=sys.stderr)
+        sys.exit(1)
+    box, rest = result
+    today = date.today().isoformat()
+    desc = strip_tags(rest)
+    agent = args.agent or "unknown"
+    line = f"- [~] {args.id} {desc} `[started: {today}, assigned: {agent}]`"
+    append_line_to("inprogress", line)
+    print(f"✅ {args.id} started → in progress (agent: {agent})")
+
+
+def cmd_done(args):
+    """Move inprogress -> done."""
+    result = remove_line_from("inprogress", args.id)
+    if not result:
+        print(f"❌ Task {args.id} not found in inprogress.", file=sys.stderr)
+        sys.exit(1)
+    box, rest = result
+    today = date.today().isoformat()
+    desc = strip_tags(rest)
+    # Inprogress uses "agent:" tag, not "assigned:"
+    agent_match = re.search(r"`\[started: [^\]]+, assigned: ([^\]]+)\]`", rest)
+    if not agent_match:
+        agent_match = re.search(r"`\[started: [^\]]+, agent: ([^\]]+)\]`", rest)
+    agent = agent_match.group(1) if agent_match else "unknown"
+    line = f"- [x] {args.id} {desc} `[completed: {today}, by: {agent}]`"
+    append_line_to("done", line)
+    print(f"✅ {args.id} completed → done")
+
+
+def cmd_list(args):
+    """Show tickets by state."""
+    data = read_all()
+    states = STATE_ORDER if not args.state else [args.state]
+    for state in states:
+        text = data.get(state, "")
+        tasks = list(parse_tasks(text))
+        if not tasks:
+            continue
+        label = STATE_LABEL.get(state, state)
+        print(f"\n─── {label.upper()} ───")
+        for id_str, box, rest in tasks:
+            desc = strip_tags(rest)
+            # Show tags concisely
+            tags = extract_tags(rest)
+            tag_text = ", ".join(f"{k}={v}" for k, v in tags.items())
+            tag_display = f"  [{tag_text}]" if tag_text else ""
+            print(f"  {box} {id_str} {desc}{tag_display}")
+
+
+# ── CLI ─────────────────────────────────────────────────────────────────────
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="lore",
+        description="The lore kanban CLI — manage lore project kanban boards.",
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # kanban subcommand
+    kb = subparsers.add_parser("kanban", help="Manage kanban board")
+    kb_sub = kb.add_subparsers(dest="kanban_cmd", required=True)
+
+    # kanban add
+    add_p = kb_sub.add_parser("add", help="Add a ticket to backlog")
+    add_p.add_argument("description", help="Ticket description")
+    add_p.add_argument("--source", default=None, help="Source of the ticket (JB, Agent, Web)")
+    add_p.set_defaults(func=cmd_add)
+
+    # kanban schedule
+    sch_p = kb_sub.add_parser("schedule", help="Move backlog -> todo")
+    sch_p.add_argument("id", help="Ticket ID (e.g. #003)")
+    sch_p.set_defaults(func=cmd_schedule)
+
+    # kanban start
+    start_p = kb_sub.add_parser("start", help="Move todo -> inprogress")
+    start_p.add_argument("id", help="Ticket ID (e.g. #003)")
+    start_p.add_argument("--agent", default=None, help="Agent assigned (e.g. agy)")
+    start_p.set_defaults(func=cmd_start)
+
+    # kanban done
+    done_p = kb_sub.add_parser("done", help="Move inprogress -> done")
+    done_p.add_argument("id", help="Ticket ID (e.g. #003)")
+    done_p.set_defaults(func=cmd_done)
+
+    # kanban list
+    list_p = kb_sub.add_parser("list", help="Show tickets by state")
+    list_p.add_argument("--state", choices=STATE_ORDER, default=None, help="Filter by state")
+    list_p.set_defaults(func=cmd_list)
+
+    parsed = parser.parse_args()
+
+    # Validate we're in a lore project for all kanban commands
+    validate_lore_dir()
+
+    parsed.func(parsed)
+
+
+if __name__ == "__main__":
+    main()

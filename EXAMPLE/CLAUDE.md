@@ -24,6 +24,7 @@ See `lore/MISSION.md` for the full project mission.
 - `testing/registry.md` — test coverage map
 - `decisions/` — architecture decision records
 - `bullpen/` — agent roster (conductor sessions)
+- `scripts/lore` — kanban CLI: `lore kanban add/schedule/start/done/list`
 
 ## Current Focus
 Epic 3: Payment instrument architecture redesign
