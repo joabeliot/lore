@@ -1,52 +1,817 @@
 ---
 name: lore
-description: "How the lore memory system works — CLI usage, ticket lifecycle, context files, and project structure"
-version: 1.0.0
+description: Initialize, update, and maintain the lore project memory system. Use this skill whenever the user mentions init lore, set up project memory, generate lore from an existing repo, update CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say "lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
+version: 3.0.0
 author: Joab Eliot
 license: MIT
 metadata:
   hermes:
-    tags: [lore, project-memory, context, cli]
+    tags: [lore, project-memory, context, cli, tickets]
 ---
 
-# Lore Skill — Using the Lore Memory System
+# SKILL: lore — Project AI Readiness Layer
 
-This skill teaches you how to use the lore CLI and project memory system.
+## What This Is
 
-## Overview
+`lore` is a folder you commit to your project. It's the single source of truth — the bible — that any developer, AI agent, or new team member reads to understand the project. Not the code. The *project*: why it exists, how it's designed, what's been decided, what's being built, and what the rules are.
 
-Lore is a project memory system for AI-assisted development. It stores project context in a `lore/` folder and manages work via tickets.
+Think of `lore` as the interface between humans and the codebase. Code tells you *what*. `lore` tells you *why*, *how*, and *what's next*.
 
-## CLI Usage
+> **📖 Lore is the bible of this project.** Every step of every session starts and ends here. Never skip reading it. Never let it go stale. When lore and your instinct disagree, update lore first — your instinct is either new information that belongs in lore, or a mistake that lore protects you from. When in doubt, check lore. When you change the project, update lore. This is the first file loaded and the last file written in every session. No exceptions.
 
-All ticket operations go through the `lore` CLI. Never edit ticket.json manually.
+**Use this skill to:**
+- Init `lore` on a new project from scratch
+- Read an existing repo and generate `lore` from what's already there
+- Update `lore` files during or after a dev session
+- Manage tickets via the `lore` CLI
+- Log decisions, features, and test coverage
+- Bridge ideas from the ideation layer into execution
 
-### Sessions
+---
+
+## Folder Structure
+
+```
+project/
+  CLAUDE.md                  ← AI session entry point (always loaded)
+  lore/
+    INDEX.md                 ← Tier 1: TOC + loading guide (always loaded)
+    GUARDRAILS.md            ← Tier 1: project rules (always loaded)
+    CONTEXT.md               ← Tier 1: current state + session log (always loaded)
+    OG.md                    ← 🔒 Human-only: raw dev journal
+    MISSION.md               ← 🔒 Human-only: project soul
+    CHANGELOG.md             ← Hook-generated: git commit history
+    workspace/
+      ticket.json            ← CLI-managed ticket state (never edit directly)
+    architecture/
+      overview.md            ← Service map, data flow, infra topology
+      models.md              ← Data models and schemas
+      apis.md                ← API contracts and external services
+    features/                ← One .md per feature
+    ideas/                   ← Pre-feature captures (unvalidated)
+    testing/
+      registry.md            ← What's covered, what's not
+    decisions/               ← Architecture Decision Records (one per decision)
+    bullpen/                 ← One folder per agent — identity + role in this project
+      [agent-name]/
+        identity.md          ← What this agent does here, strengths, task fit
+    skills/
+      custom/                ← Project-specific Claude skills
+      skills.yml             ← Skill registry
+```
+
+---
+
+## Tiered Loading
+
+Not everything loads every session. This keeps token cost low and context relevant.
+
+| Tier | Files | When |
+|---|---|---|
+| **1 — Always** | `INDEX.md`, `GUARDRAILS.md`, `CONTEXT.md` | Every session via CLAUDE.md hook |
+| **2 — On-Demand** | `architecture/`, `features/`, `testing/`, `decisions/`, `bullpen/` | Load only what the task requires |
+| **CLI-managed** | `workspace/ticket.json` | Never read directly — use `lore ticket list` / `lore session status` |
+| **Never Auto** | `OG.md`, `MISSION.md`, `CHANGELOG.md` | Human or agent pulls explicitly |
+
+**Rule:** Start every session reading Tier 1 only. Load Tier 2 files when the task requires them — name which files you loaded in your session log entry.
+
+---
+
+## Agent Session Workflow
+
+A concrete sequence for any agent operating in a project with `lore`. Follow this every session, no exceptions.
+
+### Starting a session
+1. Read `lore/INDEX.md` → `lore/GUARDRAILS.md` → `lore/CONTEXT.md` (Tier 1)
+2. Note the **Focus**, **Phase**, **Open**, and **Next** fields from CONTEXT.md — this is your briefing
+3. If picking up a task: run `lore session status` + `lore ticket list --status todo`
+4. Load Tier 2 files only as the task requires — announce which ones you load
+
+### During a session
+- Load Tier 2 files as needed, name what you loaded
+- Update ticket state as it changes — `lore ticket start <ID>`, `lore ticket done <ID>` — don't wait until the end
+- Log significant decisions to `decisions/` as you make them, not in bulk at session end
+- If you discover a gap in lore (missing feature doc, stale architecture), fix it as you go
+
+### Ending a session
+Do all of the following before closing:
+1. **Rewrite `CONTEXT.md` header** — Focus, Phase, Open, Next must reflect current state
+2. **Append a log entry** — compact, 3-5 lines (see CONTEXT.md contract for format)
+3. **Close tickets** — `lore ticket done <ID>` for each completed ticket; `lore ticket add` for new ones discovered
+4. **Update feature files** for anything that started, changed, or completed
+5. **Update `testing/registry.md`** if tests were added or removed
+6. **Write decision files** for any significant architectural choices made this session
+
+Never skip the session-end update. A lore that isn't updated after every session is a lore that lies.
+
+---
+
+## File Contracts
+
+Each file has a defined audience, purpose, and update rhythm.
+
+---
+
+### `INDEX.md`
+**Audience:** Claude Code — first stop every session.
+**Purpose:** Lightweight TOC. Tells agents what exists, what tier it lives in, and any agent-proposed additions pending review.
+**Rule:** Keep it under 60 lines. Dense, not descriptive.
+
+**Template:**
+```markdown
+# lore Index
+
+**Always load:** `GUARDRAILS.md`, `CONTEXT.md`
+
+## Tier 2 — Load When Relevant
+| File / Dir | Load when |
+|---|---|
+| `architecture/` | Making structural or data model changes |
+| `features/[name].md` | Working on that specific feature |
+| `testing/registry.md` | Writing or reviewing tests |
+| `decisions/` | Making or revisiting a significant decision |
+
+## Human-Only (Never auto-load)
+`OG.md` — raw dev journal  
+`MISSION.md` — project soul  
+`CHANGELOG.md` — git history (hook-generated)
+
+## Proposed Additions
+Agent-suggested lore expansions pending human review. If approved, they become canonical.
+- [none yet]
+```
+
+---
+
+### `GUARDRAILS.md`
+**Audience:** Claude Code + developers — always loaded.
+**Purpose:** Project-wide rules. What to always do, never do, and how conventions work here.
+**Rule:** The most read file after CONTEXT.md. Keep it honest and current. Split by domain if needed.
+
+**Template:**
+```markdown
+# Guardrails
+
+## Always
+- [Pattern to always follow]
+
+## Never
+- [Pattern to never use in this project]
+
+## Conventions
+- [Naming, structure, or style decisions specific to this project]
+
+## Backend
+- [Backend-specific rules]
+
+## Frontend
+- [Frontend-specific rules]
+```
+
+---
+
+### `CONTEXT.md`
+**Audience:** Claude Code — always loaded.
+**Purpose:** Dense current state + chronological session log. This is how any agent picks up where the last one left off without re-reading the whole codebase.
+**Rule:** The header block is rewritten each session. Log entries are appended, never deleted. Keep entries compact — 3-5 lines max.
+
+**Template:**
+```markdown
+# Context
+
+**Focus:** [what's actively being built — one line]
+**Phase:** [Alpha / Beta / Prod / R&D]
+**Open:** [open thread], [open thread]
+**Next:** [next task], [next task]
+
+---
+
+## Log
+
+### YYYY-MM-DD — [Dev Name]
+[2-3 sentence summary of what was asked, what was done, and what the state is now]
+Loaded: `architecture/models.md`, `features/auth.md`
+Left open: [unresolved threads]
+Carry forward: [what the ideation layer should be re-briefed on at the start of the next session]
+
+---
+```
+
+**Multi-agent log format** (conductor sessions):
+```markdown
+### YYYY-MM-DD — [Conductor] / [sub-agent]
+[2-3 sentence summary]
+Loaded: `architecture/models.md`
+Task: #[ID] — completed / in progress
+Left open: [anything unfinished]
+```
+
+Format: `[Conductor] / [Sub-agent]` — replace with actual names (e.g. `Jerry / claude-code`, `Hermes / codex`). Makes it always clear who conducted and who executed.
+
+**How to write a good log entry:**
+- Summarize intent + outcome in 2-3 sentences. Not a transcript.
+- List files loaded this session so the next agent knows what context was available.
+- Flag anything left open so the next session starts where this one left off.
+
+---
+
+### `OG.md` 🔒
+**Audience:** You — the developer. Claude reads it, never writes it.
+**Rule:** Never AI-generated. Never structured. This is your unfiltered voice.
+**Purpose:** Raw dev journal. Doubts, instincts, hunches, things you want to remember but aren't ready to formalize. Claude reads this to understand your intent and vibe when making judgment calls.
+
+**Prompt to start:** *"What's going on in my head about this project right now?"*
+
+---
+
+### `MISSION.md` 🔒
+**Audience:** You — the developer. Claude reads it, never writes it.
+**Rule:** Never AI-generated. This is the soul of the project.
+**Purpose:** The *why*. Not operational detail — why it should exist, who it's for, what success looks like. Claude reads this when making decisions that require understanding what the project is trying to *be*, not just what it's currently doing.
+
+**Must answer:** What is this? Who is it for? What problem does it solve? Why should it exist? What does success look like?
+
+**Prompt to write it:** *"If I had to explain this to someone who'd never heard of it, and I wanted them to understand not just what it does but why it matters — what would I say?"*
+
+---
+
+### `CHANGELOG.md`
+**Audience:** Humans + Claude Code — never auto-loaded, pull on demand.
+**Purpose:** Auto-generated commit history. The evolution of the product in git form.
+**Rule:** Written by the `post-commit` git hook, not by agents or humans. Never manually edited.
+
+**Format (auto-generated):**
+```markdown
+# Changelog
+
+## YYYY-MM-DD HH:MM — [short hash] — [commit message]
+[commit body if present]
+
+---
+```
+
+---
+
+### `lore` CLI — Project + Ticket Management
+
+A global Rust binary at `~/.local/bin/lore`. Zero dependencies. Auto-detects the active project by walking up directories until it finds `lore/config.yml`. Supports UUID prefix matching on all commands.
+
+**Install:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | bash
+```
+
+---
+
+#### Project Commands
+
 ```sh
-lore create project --name "project" --description "..." --wrk-dir "/path" --shorthand ABC
-lore recall <uuid|prefix>
+# Create a new project session
+lore create project \
+  --name "my-app" \
+  --description "What this project does" \
+  --wrk-dir "/path/to/project" \
+  --shorthand MYA
+
+# Create from a lore package zip (lore/ folder inside)
+lore create project --unzip /path/to/archive.zip --name "..." --shorthand MYA
+
+# List all project sessions
 lore list projects
+
+# Print project context (readable or --json)
+lore recall <uuid-prefix>
+lore recall 4cdf --json
+
+# Register an existing project's lore/ folder as a session
+lore session attach --wrk-dir <path>
+
+# Edit project settings
+lore edit project <uuid-prefix> [--name] [--description] [--shorthand] [--wrk-dir]
+
+# Delete a session (keeps project files)
+lore delete project <uuid-prefix>
+
+# Self-update the CLI binary
+lore update
+
+# Print version
+lore --version
+lore version
 ```
 
-### Tickets
+Creates: `~/.lore/sessions/<uuid>.yml` + `lore/config.yml` + `lore/workspace/ticket.json`
+
+---
+
+#### Ticket Commands
+
 ```sh
-lore ticket add --name "task" --priority P1 --tags "backend,auth" --context "features/auth.md"
-lore ticket list [--status todo] [--priority P1]
-lore ticket schedule <session> ABC-1
-lore ticket start <session> ABC-1 --agent agy
-lore ticket done <session> ABC-1
-lore ticket edit <session> ABC-1 --name "new name"
-lore ticket show <session> ABC-1
+# Add a ticket (auto-increments: MYA-1, MYA-2...)
+lore ticket add --name "Build auth flow" --priority P1 --tags "backend,auth"
+lore ticket add --name "Implement auth" --context "features/auth.md,architecture/models.md" --priority P1
+
+# List tickets
+lore ticket list
+lore ticket list --status todo
+lore ticket list --priority P1
+
+# Show a ticket (by prefix or ID)
+lore ticket show 4cdf MYA-1
+
+# Edit a ticket
+lore ticket edit MYA-1 --name "new name" --priority P0 --tags "backend,urgent"
+lore ticket edit MYA-1 --context "features/updated.md,architecture/overview.md"
+
+# Move through lifecycle
+lore ticket schedule MYA-1             # backlog → todo
+lore ticket start MYA-1 --agent agy   # todo → inprogress (with assignment tracking)
+lore ticket done MYA-1                 # inprogress → done
 ```
 
-### Pre-PR Gate
+Tickets are stored in `lore/workspace/ticket.json`. IDs are permanent — shorthand prefix + auto-incrementing number.
+
+---
+
+#### Session Commands
+
 ```sh
-lore inspect <session> ABC-1
+lore session status    # Shows ticket counts per state
+lore session log <session> "message"   # Log a message to a ticket
+lore session close     # Closes the active session
 ```
 
-## Key Rules
+---
 
-- Never edit ticket.json directly — use `lore ticket`
-- Tickets reference context files in `features/`, `architecture/`, etc.
-- Use `lore inspect` before marking a ticket done
-- Auto-detection from cwd works if inside a project with `lore/config.yml`
+#### Pre-PR Gate
+
+```sh
+lore inspect <session> MYA-1    # Verifies context files exist, project builds, tests pass
+```
+
+Run `lore inspect` before marking any ticket done. This is the quality gate between building and merging.
+
+---
+
+#### Agent Usage Rules
+
+- **Use `lore ticket <command>` exclusively** — never edit `workspace/ticket.json` directly
+- **Use `lore ticket start/done` to move tickets** — preserves metadata and assignment tracking
+- **Use `lore inspect <session> <ticket-id>`** as a pre-PR gate before marking done
+- **Use `lore recall` at session start** to load project context if no CONTEXT.md is available
+- **Use `lore session status`** to get a quick state snapshot before planning work
+- **Always confirm the active project first** (`lore list projects` or `lore recall <prefix>`) before adding tickets — the CLI auto-detects from cwd but verify it found the right project
+
+---
+
+### `architecture/overview.md`
+**Audience:** Claude Code + humans — load when making structural changes.
+**Purpose:** How the system is designed. Service map, data flow, infra topology, external dependencies.
+**Rule:** Updated by agent when architecture changes. Covers the *shape* of the system, not every field.
+
+---
+
+### `architecture/models.md`
+**Audience:** Claude Code + humans.
+**Purpose:** Data models and schemas — field names, types, relationships, constraints, quirks.
+**Include:** Soft deletes, multi-tenancy patterns, custom managers, naming conventions, anything non-obvious.
+
+---
+
+### `architecture/apis.md`
+**Audience:** Claude Code + humans.
+**Purpose:** API contracts — internal endpoints and external services.
+**Include:** Base URLs, auth method, key endpoints, rate limits, versioning, known gotchas.
+
+---
+
+### `features/[feature-name].md`
+**Audience:** Claude Code + humans — load when working on that feature.
+**Purpose:** One file per committed or in-progress feature.
+
+**Template:**
+```markdown
+# Feature: [Name]
+
+**Status:** Idea / In Progress / Done / Paused
+
+## What It Does
+[What problem it solves and how]
+
+## Edge Cases
+- [Known edge case]
+
+## Assumptions
+- [assumption] — validate by: [how or when this gets confirmed or invalidated]
+
+## Open Questions
+- [Unresolved question]
+
+## Notes
+[Anything else relevant]
+```
+
+---
+
+### `ideas/[idea-name].md`
+**Audience:** You + Claude Code.
+**Purpose:** Pre-feature, unvalidated. Low friction capture.
+**Rule:** No strict format. Write enough to remember the idea and the instinct behind it. Promote to `features/` when committed.
+
+---
+
+### `testing/registry.md`
+**Audience:** Claude Code — load when writing or reviewing tests.
+**Purpose:** Living map of test coverage. Agent updates this when tests are added or removed.
+
+**Template:**
+```markdown
+# Test Registry
+
+## Covered
+| Area | Test file | Type | Notes |
+|---|---|---|---|
+| Auth / login | `tests/test_auth.py` | Unit | Covers happy path + wrong password |
+
+## Not Covered
+- Payment webhook failure cases
+- Concurrent session handling
+
+## Known Gaps
+- [Gap that's accepted and won't be covered]
+```
+
+---
+
+### `decisions/[decision-slug].md`
+**Audience:** Claude Code + humans — load when making or revisiting a significant decision.
+**Purpose:** Architecture Decision Records. Prevents re-litigating what's already been decided.
+**Rule:** One file per decision. Filename is a short kebab-case slug of the decision title.
+
+**Template:**
+```markdown
+# [Decision Title]
+
+**Date:** YYYY-MM-DD
+**Status:** Decided / Superseded / Under Review
+
+## Decided
+[What was chosen]
+
+## Why
+[The reasoning — constraints, tradeoffs, context]
+
+## Rejected
+[What else was considered and why it lost]
+
+## Consequences
+[What this means going forward — what gets easier, what gets harder]
+```
+
+---
+
+### `bullpen/` — Agent Roster
+
+**Audience:** Conductor — load when building a delegation plan.
+**Purpose:** The bullpen is the conductor's roster of available agents for this project. It tells the conductor who to use for what, and it's the mechanism by which agents receive their project-specific context when a task is delegated to them.
+**Rule:** The conductor decides which agents get a folder and what files go in each one. `identity.md` is the only required file. Everything else is project-specific.
+
+---
+
+#### How the Bullpen Works
+
+**Setting it up (conductor's job):**
+1. When initializing a project, the conductor creates a folder in `bullpen/` for each agent that will work on the project
+2. At minimum, each folder gets an `identity.md` defining the agent's role in this project
+3. Add any other files the agent will need: skills, tools, custom instructions, prompt templates
+4. The conductor updates bullpen files when agent roles change or new capabilities are added
+
+**Using it during delegation (conductor's job):**
+- Before assigning a task, read all files in the target agent's bullpen folder
+- Include the full contents of those files in the delegation packet under `--- YOUR IDENTITY IN THIS PROJECT ---`
+- This is how the agent knows who they are in this codebase — not from their own memory, from what you inject
+
+**Receiving it (agent's job):**
+- When you receive a delegation packet, your bullpen files are included at the top
+- Read them before anything else — they define your role, your strengths, and your constraints for this project
+- Your identity in one project may differ from another — always use the bullpen files you were given, not assumptions
+
+---
+
+#### `identity.md` — Required for Every Agent
+
+The baseline file every agent folder must have. Scoped to this project specifically.
+
+**Template:**
+```markdown
+# [Agent Name]
+
+**Priority:** [#N — routing order when multiple agents are available; omit if solo]
+**Role:** [what this agent does in this specific project]
+**Strengths:** [what it excels at — be specific to this codebase and stack]
+**Delegate when:** [types of tasks that should come to this agent]
+**Avoid:** [what not to assign — where this agent underperforms]
+**Invocation:** [how the conductor calls or invokes this agent]
+```
+
+---
+
+#### Other Files (Project-Specific)
+
+Beyond `identity.md`, add whatever the agent needs to operate well in this project.
+
+| File | Use it when |
+|---|---|
+| `skills.md` | The agent has specific capabilities relevant to this stack |
+| `tools.md` | The agent has access to specific tools in this project |
+| `instructions.md` | The agent needs project-specific operating instructions |
+| `prompts/` | Reusable prompt templates for common task types |
+
+---
+
+#### Example Bullpen Structure
+
+```
+lore/bullpen/
+  conductor/
+    identity.md          ← Conductor's role + how sub-agents should report back
+  claude-code/
+    identity.md          ← Role in this project
+    skills.md            ← Stack conventions specific to this repo
+  codex/
+    identity.md
+    instructions.md      ← How to format generated code for this codebase
+  agy/
+    identity.md
+    tools.md             ← CLI tools and APIs available to agy here
+```
+
+---
+
+### `skills/custom/`
+Project-specific Claude skills. Same SKILL.md format.
+Use for patterns unique to this repo: how views are written, how errors are handled, how migrations work, how tests are structured.
+
+---
+
+### `skills/skills.yml`
+Registry of all skills in use — like `requirements.txt` for Claude skills.
+
+**Format:**
+```yaml
+skills:
+  - name: lore
+    version: 3.0.0
+    source: https://github.com/joabeliot/lore
+    notes: using as-is
+
+  - name: my-custom-skill
+    source: custom
+    notes: written for this project
+```
+
+---
+
+## Session Update Rule
+
+At the end of every session, Claude must:
+
+1. **Update `CONTEXT.md` header** — rewrite the Focus, Phase, Open, Next lines to reflect current state
+2. **Append a log entry** to `CONTEXT.md` — compact, 3-5 lines, what was done and what's open
+3. **Update tickets** — `lore ticket done <ID>` for completed; `lore ticket add` for new ones
+4. **Update feature files** if a feature was started, completed, or changed
+5. **Log decisions** to `decisions/` if a significant architectural choice was made
+6. **Update `testing/registry.md`** if tests were added or removed
+7. **Commit** — both code and `lore/` changes committed together. They move as one.
+
+**What Claude never touches:**
+
+| File | Why |
+|---|---|
+| `OG.md` | Human-only. Always. |
+| `MISSION.md` | Human-only. Always. |
+| `CHANGELOG.md` | Hook-generated. Always. |
+
+---
+
+## Multi-Agent Protocol
+
+> **If you are the conductor (orchestrator):** load the `lere` skill — it is your complete operating manual and supersedes this summary.
+> **If you are a sub-agent receiving delegated work:** read this section to understand your role in the conductor model.
+
+When a conductor (e.g. Hermes/Jerry) coordinates multiple sub-agents, `lore` becomes the shared state layer. This protocol keeps every agent synchronized and prevents conflicts.
+
+### Session Types
+
+| Type | Who | Protocol |
+|---|---|---|
+| **Solo** | Developer + one agent | Standard Agent Session Workflow above |
+| **Conductor session** | Conductor + sub-agents | lere skill protocol |
+
+### Conductor Startup (sub-agent's understanding)
+
+When the conductor begins:
+1. Reads Tier 1: `INDEX.md` → `GUARDRAILS.md` → `CONTEXT.md`
+2. Runs `lore session status` + `lore ticket list --status todo`
+3. Builds delegation plan — which tasks, which agents, what order
+4. Assigns tasks via delegation packets
+5. Monitors sub-agents; merges lore when they report back
+
+### Delegation Packet
+
+What the conductor sends to each sub-agent when delegating a task:
+
+```
+Task: #[ID] [description]
+
+Context (paste CONTEXT.md header):
+  Focus: ...
+  Phase: ...
+  Open: ...
+  Next: ...
+
+Guardrails: [paste GUARDRAILS.md or relevant sections]
+
+Load these lore files: [list Tier 2 files relevant to this task]
+
+Produce: [clear output spec — what files to write, what to build, what tests to write]
+
+On completion you must:
+  1. Run `lore ticket done [ID]` to close the ticket
+  2. Append a log entry to lore/CONTEXT.md using the multi-agent format
+  3. Update any feature files, decisions, or test registry that changed
+  4. Report back: task ID, outcome, files changed, what's left open
+```
+
+### Sub-Agent Completion Protocol
+
+When a sub-agent finishes, it must do all of the following before reporting back:
+
+1. Run `lore ticket done <ID>` to close the ticket
+2. Append a log entry to `CONTEXT.md` using the multi-agent format
+3. Update any `features/`, `decisions/`, or `testing/registry.md` that changed
+4. Report back to the conductor:
+   - Task ID and status (completed / partial / blocked)
+   - Files changed
+   - Anything left open or deferred
+   - Any blockers that need the conductor's attention
+
+### Concurrency Rules
+
+These rules prevent lore conflicts when multiple agents are active:
+
+- **One agent per task** — conductor assigns; sub-agents never self-assign
+- **Sequential lore writes** — if two agents finish near-simultaneously, they queue writes; conductor merges if needed
+- **No simultaneous file edits** — two agents must never write to the same file at the same time
+- **`lore ticket done` is safe to run concurrently** — the CLI handles atomic writes to ticket.json
+- **`CONTEXT.md` header is the conductor's** — sub-agents append log entries; only the conductor rewrites the header block at session end
+
+### Conductor Loop
+
+```
+1. Read lore Tier 1 + run `lore session status` + `lore ticket list --status todo`
+2. Build task assignments based on todo tickets + current context
+3. Send delegation packets to sub-agents (can run in parallel)
+4. Receive completion reports from sub-agents
+5. Merge any lore conflicts
+6. Rewrite CONTEXT.md header with current state
+7. Repeat or close session
+```
+
+### Ownership Table
+
+| Responsibility | Conductor | Sub-Agent |
+|---|---|---|
+| `CONTEXT.md` header | Rewrites at session end | Appends log entries only |
+| Ticket assignment | Assigns via `lore ticket start <ID> --agent [name]` | Never self-assigns |
+| Ticket completion | Monitors overall state | Runs `lore ticket done <ID>` |
+| `features/`, `decisions/`, `testing/` | — | Updates files relevant to their task |
+| Lore conflict resolution | Merges conflicts | Reports conflicts upward |
+
+---
+
+## Hook Automation
+
+`lore` uses git hooks to automate what agents shouldn't have to manually track.
+
+### `post-commit` → `lore/CHANGELOG.md`
+
+The `post-commit` hook appends every commit to `CHANGELOG.md` automatically. Install it once per project:
+
+```bash
+./install.sh --hooks /path/to/your/project
+```
+
+### What hooks do vs what agents do
+
+| Responsibility | Hook | Agent |
+|---|---|---|
+| `CHANGELOG.md` | Auto-appends on every commit | Never touches |
+| `CONTEXT.md` | — | Updates header + appends log |
+| `workspace/ticket.json` | — | Updates via `lore ticket` CLI commands |
+| `architecture/` | — | Updates when structure changes |
+| `testing/registry.md` | — | Updates when tests change |
+| `decisions/` | — | Creates new file per decision |
+
+---
+
+## Agent Creative Additions
+
+Agents can propose new lore structure for a project — a new folder, a new file type, a new convention. If it's useful and the developer approves it, it gets added to the canonical spec.
+
+**Rule:**
+1. If you think a creative addition would help the project, **build it and use it**
+2. Add an entry to `lore/INDEX.md` under `Proposed Additions` describing what you added and why
+3. The human reviews and decides whether it becomes canonical
+4. Never silently add to the canonical folder structure — only to `Proposed Additions`
+
+---
+
+## Init: New Project
+
+When asked to init `lore` on a new project:
+
+1. Run `lore create project --name "..." --description "..." --wrk-dir "." --shorthand ABC`
+2. Create the full folder structure
+3. Stub every file with its template
+4. Fill `CLAUDE.md` with what's known: project name, stack, purpose, Session Rule, and lore Index
+5. Leave `OG.md` blank with the prompt: *"What's on your mind about this project?"*
+6. Leave `MISSION.md` blank with the prompt: *"What is this project and why should it exist?"*
+7. Set `CONTEXT.md` header with placeholder values and an empty log section
+8. Ask the developer to confirm: stack, key rules, and current focus before finalizing `CLAUDE.md`
+
+**What NOT to invent:**
+- Do not populate `architecture/models.md` with field names — stub only
+- Do not populate `architecture/apis.md` with endpoints — stub only
+- Do not create files inside `features/`, `ideas/`, or `decisions/` — leave dirs empty
+- Do not add `testing/registry.md` coverage rows — stub only
+
+Inventing content contaminates `lore` with hallucinated facts that look real. A blank stub is better than a confident wrong guess.
+
+---
+
+## Init: Existing Repo
+
+When pointed at a repo that has no `lore`:
+
+**Step 1 — Check for CLAUDE.md**
+- If `CLAUDE.md` exists: inject the lore block (Session Rule + lore Index) without overwriting the rest
+- If it doesn't exist: create it from the template
+
+**Step 2 — Read the repo**
+Scan `README.md`, package files (`requirements.txt`, `package.json`, `pubspec.yaml`, `Dockerfile`), and folder structure to infer stack and architecture.
+
+**Step 3 — Generate `lore/`** using canonical paths only:
+- `lore/architecture/overview.md` from inferred system design
+- `lore/architecture/models.md` from model/schema files found
+- `lore/architecture/apis.md` from route/serializer files found
+- `lore/CONTEXT.md` with header ready for first session entry
+- `lore/GUARDRAILS.md` with reasonable defaults from what you found
+- `lore/OG.md` and `lore/MISSION.md` left blank with human prompts
+
+**Step 4 — Register the session**
+Run `lore create project --name "..." --wrk-dir "." --shorthand ABC` to create the CLI session.
+
+**Step 5 — Flag gaps**
+Consolidate everything that couldn't be inferred into a numbered list. Never silently skip.
+
+**Critical: never invent subdirectories** outside the canonical structure. All inferred content goes into canonical files. A non-standard `lore/` layout breaks compatibility with every agent that reads it.
+
+---
+
+## Ideation-to-Code Bridge Workflow
+
+The ideation layer (limn skill) is where ideas get shaped into Lore Packages. The execution layer (this skill + lere skill) is where they get built. The handoff between them is the Lore Package artifact.
+
+```
+1. Design in the ideation layer (limn skill for guided sessions)
+2. Say "generate lore package" — the ideation agent outputs a structured handoff artifact
+3. Hand the Lore Package to the conductor (multi-agent) or Claude Code directly (solo)
+4. Agent reads lore, applies the package, picks up tickets via `lore ticket list`, and executes
+5. After building, Claude Code updates CONTEXT.md and runs `lore ticket done <ID>` for completed work
+6. Commit lore alongside code changes
+```
+
+**Rule:** `OG.md` and `MISSION.md` are always written by the human. Every other file can be AI-generated or AI-updated — but should be human-reviewed before committing.
+
+---
+
+## Keeping `lore` Healthy
+
+- `CONTEXT.md` header is rewritten every session — stale focus is worse than no focus
+- Log entries are appended every session — never skip it
+- Tickets reflect current reality — `lore ticket done` the moment work is complete
+- Feature files get updated when features change — not just when they're created
+- `testing/registry.md` grows with the test suite
+- `decisions/` prevents re-litigating what's already settled
+- Commit `lore/` alongside code — they should move together
+
+---
+
+## Evolving This Skill
+
+This skill lives in `skills/lore/SKILL.md` in the lore repo, installed to each agent's skill directory.
+
+When an agent proposes a creative addition that the developer approves, it gets added to this canonical SKILL.md and versioned. Projects then update by running the installer again.
+
+The goal: any project with `lore/` is immediately legible to any agent, any developer, and any future team member — with zero onboarding friction.

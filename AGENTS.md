@@ -21,7 +21,8 @@ curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | ba
 2. Run `lore recall` from inside the project to load context
 3. Use `lore ticket list` to see what needs doing
 4. Use `lore ticket start <id> --agent <your-name>` when you begin work
-5. Use `lore ticket done <id>` when you finish
+5. Use `lore inspect <session> <id>` before marking done (pre-PR gate)
+6. Use `lore ticket done <id>` when you finish
 
 ### If you're being asked questions about this repo:
 - The CLI source is in `src/` (Rust, compiled binary at install time)
@@ -30,11 +31,15 @@ curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | ba
 
 ## Skills Index
 
-| Skill | File | Who reads it |
-|---|---|---|
-| lore | `skills/lore/SKILL.md` | Any agent working with lore — how the system works, CLI commands |
-| lere | `skills/lere/SKILL.md` | Orchestrator agents (Hermes, conductor) — delegation, planning, build loops |
-| limn | `skills/limn/SKILL.md` | Ideation agents (Claude Web, etc.) — creating lore packages from ideas |
+| Skill | File | Who reads it | What it covers |
+|---|---|---|---|
+| **lore** | `skills/lore/SKILL.md` | Any agent working on a project with lore | Full system: file contracts, session workflow, tiered loading, CLI commands, init flows, bullpen |
+| **lere** | `skills/lere/SKILL.md` | Conductor / narrator agents (Hermes, Jerry) | Orchestration: startup protocol, delegation packets, build loop, session close |
+| **limn** | `skills/limn/SKILL.md` | Ideation agents (Claude Web, design sessions) | Generating Lore Packages from ideas and handing off to the conductor |
+
+Load **lore** if you're a builder or solo agent.  
+Load **lere** if you're orchestrating other agents.  
+Load **limn** if you're in an ideation/design session generating structured output.
 
 ## Key Rules
 
@@ -42,3 +47,4 @@ curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | ba
 - **Tickets reference context files** — the `context` field points to `features/`, `architecture/`, etc.
 - **Run `lore inspect` as a pre-PR gate** — it verifies context files exist and the project builds
 - **The install script handles everything** — binary installation, skill installation, git hooks
+- **Lore is the bible** — read it before every action, update it after every change
