@@ -1,3 +1,9 @@
+---
+name: lore
+description: Web Claude workflow for lore. Use this skill when working in Claude Web on a project that uses lore. Covers how to run ideation sessions, generate Lore Packages, and hand off structured output to the conductor or solo agent for execution.
+version: 1.3.0
+---
+
 # lore — Web Claude Workflow
 
 ## Web is the Structured Spark
@@ -41,7 +47,7 @@ Paste this at the start of any Claude Web session (or set it as Project Instruct
 ```
 You are working with a project that uses lore — a structured project memory system committed to the repo.
 
-Your role: IDEATION LAYER. You think, design, plan, and architect. You do not execute — a conductor picks up your output and delegates to sub-agents who build.
+Your role: IDEATION LAYER. You think, design, plan, and architect. You do not execute — a conductor or solo agent picks up your output and runs it.
 
 How this session works:
 1. I'll share context about the project (lore files, current state, what I'm thinking about)
@@ -68,6 +74,7 @@ This is what Web Claude outputs. The conductor reads every section and applies i
 
 ````markdown
 # Lore Package — YYYY-MM-DD
+**Session Type:** Ideation | Architecture | Feature Design | Debugging
 
 ## Summary
 [2-3 sentences: what was discussed, what was decided, what the conductor needs to know]
@@ -76,8 +83,9 @@ This is what Web Claude outputs. The conductor reads every section and applies i
 
 ## Kanban — Add to Backlog
 <!-- One ticket per task that came out of this session -->
-- [ ] #[auto] [task description] `[source: Web, YYYY-MM-DD]`
-- [ ] #[auto] [task description] `[source: Web, YYYY-MM-DD]`
+<!-- Conductor assigns real IDs (#001, #002...) when moving these to backlog -->
+- [ ] #[TBD] [task description] `[source: Web, YYYY-MM-DD]`
+- [ ] #[TBD] [task description] `[source: Web, YYYY-MM-DD]`
 
 ---
 
@@ -96,6 +104,9 @@ This is what Web Claude outputs. The conductor reads every section and applies i
 
 ## Edge Cases
 - [edge case]
+
+## Assumptions
+- [assumption] — validate by: [how or when this gets confirmed or invalidated]
 
 ## Open Questions
 - [question]
@@ -132,6 +143,13 @@ This is what Web Claude outputs. The conductor reads every section and applies i
 
 ---
 
+## Open Decisions
+<!-- Forks that came up this session but weren't resolved -->
+<!-- Conductor: treat each as a flagged blocker or research task -->
+- [question] — options: [A vs B] — blocked on: [what's needed to decide]
+
+---
+
 ## Architecture Updates
 <!-- Only include sections that changed -->
 <!-- Omit this section if no architecture changed -->
@@ -155,7 +173,8 @@ Log entry to append:
 ### YYYY-MM-DD — Web Session
 [2-3 sentence summary of what was discussed and decided]
 Loaded: N/A (web session)
-Left open: [anything unresolved]
+Left open: [unresolved threads]
+Carry forward: [what Web Claude should be re-briefed on at the start of the next session — paste this line to re-prime fast]
 ```
 
 ---
@@ -170,21 +189,23 @@ Left open: [anything unresolved]
 
 ## How the Conductor Consumes It
 
-The conductor (Hermes) receives the Lore Package and processes it in this order:
+The conductor receives the Lore Package and processes it in this order:
 
 1. Reads **Summary** — understands what came out of the web session
 2. Adds **Kanban tickets** to `lore/kanban/backlog.md`
-3. Writes **Feature files** to `lore/features/`
-4. Writes **Decision files** to `lore/decisions/`
-5. Applies **Architecture updates** to the relevant files
-6. Applies **CONTEXT.md Update** — updates header block, appends log entry
-7. Reviews **Notes for Conductor** — flags dependencies, risks, ordering
-8. Builds delegation plan from the new backlog items
+3. Reviews **Open Decisions** — creates a research or blocking ticket in backlog for each unresolved fork
+4. Writes **Feature files** to `lore/features/`
+5. Writes **Decision files** to `lore/decisions/`
+6. Applies **Architecture updates** to the relevant files
+7. Applies **CONTEXT.md Update** — updates header block, appends log entry
+8. Reviews **Notes for Conductor** — flags dependencies, risks, ordering
+9. Builds delegation plan from the new backlog items
 
 ---
 
 ## Tips for Web Sessions
 
+- **Lore is the bible of this project.** Don't suggest anything that contradicts what's already decided there. If you think lore should change, flag it — don't silently contradict it.
 - Paste the relevant lore files at the start: CONTEXT.md, GUARDRAILS.md, the feature or architecture file you're working through
 - The more context you give Web Claude, the better the Lore Package it generates
 - If a decision is complex, ask Web Claude to draft the `decisions/` file content during the session — not just at the end

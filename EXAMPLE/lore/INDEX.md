@@ -12,6 +12,7 @@
 | `features/[name].md` | Working on that specific feature |
 | `testing/registry.md` | Writing or reviewing tests |
 | `decisions/` | Making or revisiting a significant decision |
+| `bullpen/` | Orchestrating — know your agents and their priority order |
 
 ## Human-Only (Never auto-load)
 `OG.md` — raw dev journal  
