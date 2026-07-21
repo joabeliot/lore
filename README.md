@@ -42,6 +42,7 @@ project/
     testing/
       registry.md            ← What's covered, what's not
     decisions/               ← Architecture Decision Records
+    bullpen/                 ← Agent roster (one folder per agent)
     skills/                  ← Claude skills (shared + custom)
 ```
 
@@ -54,17 +55,26 @@ Full spec for every file — templates, contracts, update rules — is in [`SKIL
 ```bash
 git clone https://github.com/joabeliot/lore
 cd lore
-./install.sh
+./install.sh --skill-dir ~/.claude/skills/lore
 ```
 
 This copies `SKILLS.md` to `~/.claude/skills/lore/SKILL.md`. Claude Code can now use the `lore` skill.
+
+### WEB.md — Claude Web ideation sessions
+Upload `WEB.md` as a skill on claude.ai Projects. Use it when designing in Claude Web before handing off to a code agent. Say `generate lore package` to get the structured handoff artifact.
+
+### CONDUCTOR.md — multi-agent setups
+```bash
+./install.sh --conductor-dir ~/.hermes/skills/lore
+```
+Install to wherever your orchestrator reads skills from. This is the conductor's operating manual — separate from the agent skill. Run `./install.sh --help` to see all options.
 
 ### Install git hooks (optional but recommended)
 
 The `post-commit` hook auto-generates `lore/CHANGELOG.md` on every commit:
 
 ```bash
-./install.sh --hooks /path/to/your/project
+./install.sh --skill-dir ~/.claude/skills/lore --hooks /path/to/your/project
 ```
 
 ---
@@ -76,7 +86,7 @@ The `post-commit` hook auto-generates `lore/CHANGELOG.md` on every commit:
 | Tier | Files | When |
 |---|---|---|
 | **Always** | `INDEX.md`, `GUARDRAILS.md`, `CONTEXT.md` | Every session |
-| **On-Demand** | `kanban/`, `architecture/`, `features/`, `testing/`, `decisions/` | Load what the task needs |
+| **On-Demand** | `kanban/`, `architecture/`, `features/`, `testing/`, `decisions/`, `bullpen/` | Load what the task needs |
 | **Never Auto** | `OG.md`, `MISSION.md`, `CHANGELOG.md` | Pull explicitly |
 
 Your CLAUDE.md hook loads Tier 1. Agents load Tier 2 files as needed and log which ones they used.
@@ -166,11 +176,13 @@ Proposals live in `lore/INDEX.md` under **Proposed Additions** until reviewed.
 
 ## Web-to-Code Bridge
 
+Claude Web is the ideation layer. Claude Code is execution. The handoff is a Lore Package.
+
 ```
-1. Think through ideas or architecture in Claude Web
-2. Ask Claude Web to generate a lore file from the discussion
-3. Paste it into the correct lore file in your repo
-4. Claude Code picks it up next session
+1. Design in Claude Web (use WEB.md as a skill for guided sessions)
+2. Say "generate lore package" — Web Claude outputs a structured handoff artifact
+3. Hand the Lore Package to your conductor (multi-agent) or Claude Code (solo)
+4. Agent applies it to lore, picks up kanban tasks, and executes
 5. After building, Claude Code updates CONTEXT.md and kanban
 6. Commit lore alongside code
 ```
@@ -179,4 +191,9 @@ Proposals live in `lore/INDEX.md` under **Proposed Additions** until reviewed.
 
 ## Full Spec
 
-Templates, file contracts, init flows, session rules: [`SKILLS.md`](SKILLS.md)
+| File | Purpose |
+|---|---|
+| [`SKILLS.md`](SKILLS.md) | Full spec: templates, file contracts, init flows, session rules |
+| [`WEB.md`](WEB.md) | Web Claude workflow — ideation sessions and Lore Package format |
+| [`CONDUCTOR.md`](CONDUCTOR.md) | Conductor operating manual — multi-agent delegation and lore sync |
+| [`install.sh`](install.sh) | Composable installer — run `./install.sh --help` for all options |
