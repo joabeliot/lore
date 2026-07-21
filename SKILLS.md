@@ -1,7 +1,7 @@
 ---
 name: lore
 description: Initialize, update, and maintain the lore project memory system. Use this skill whenever the user mentions init lore, set up project memory, generate lore from an existing repo, update CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say "lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
-version: 2.2.0
+version: 2.4.0
 ---
 
 # SKILL: lore — Project AI Readiness Layer
@@ -11,6 +11,8 @@ version: 2.2.0
 `lore` is a folder you commit to your project. It's the single source of truth — the bible — that any developer, AI agent, or new team member reads to understand the project. Not the code. The *project*: why it exists, how it's designed, what's been decided, what's being built, and what the rules are.
 
 Think of `lore` as the interface between humans and the codebase. Code tells you *what*. `lore` tells you *why*, *how*, and *what's next*.
+
+> **📖 Lore is the bible of this project.** Every step of every session starts and ends here. Never skip reading it. Never let it go stale. When lore and your instinct disagree, update lore first — your instinct is either new information that belongs in lore, or a mistake that lore protects you from. When in doubt, check lore. When you change the project, update lore. This is the first file loaded and the last file written in every session. No exceptions.
 
 **Use this skill to:**
 - Init `lore` on a new project from scratch
@@ -187,7 +189,8 @@ Agent-suggested lore expansions pending human review. If approved, they become c
 ### YYYY-MM-DD — [Dev Name]
 [2-3 sentence summary of what was asked, what was done, and what the state is now]
 Loaded: `architecture/models.md`, `features/auth.md`
-Left open: [anything unfinished or deferred]
+Left open: [unresolved threads]
+Carry forward: [what Web Claude should be re-briefed on at the start of the next session — paste this line to re-prime fast]
 
 ---
 ```
@@ -332,6 +335,9 @@ Format: `[Conductor] / [Sub-agent]` — replace with actual names (e.g. `Jerry /
 ## Edge Cases
 - [Known edge case]
 
+## Assumptions
+- [assumption] — validate by: [how or when this gets confirmed or invalidated]
+
 ## Open Questions
 - [Unresolved question]
 
@@ -434,6 +440,7 @@ The baseline file every agent folder must have. Scoped to this project specifica
 ```markdown
 # [Agent Name]
 
+**Priority:** [#N — routing order when multiple agents are available; omit if solo]
 **Role:** [what this agent does in this specific project]
 **Strengths:** [what it excels at — be specific to this codebase and stack]
 **Delegate when:** [types of tasks that should come to this agent]
@@ -497,7 +504,7 @@ Registry of all skills in use — like `requirements.txt` for Claude skills.
 ```yaml
 skills:
   - name: lore
-    version: 2.1.0
+    version: 2.4.0
     source: https://github.com/joabeliot/lore
     notes: using as-is
 
@@ -518,6 +525,7 @@ At the end of every session, Claude must:
 4. **Update feature files** if a feature was started, completed, or changed
 5. **Log decisions** to `decisions/` if a significant architectural choice was made
 6. **Update `testing/registry.md`** if tests were added or removed
+7. **Commit** — both code and `lore/` changes committed together. They move as one.
 
 **What Claude never touches:**
 
@@ -725,11 +733,13 @@ Consolidate everything that couldn't be inferred into a numbered list. Never sil
 
 ## Web-to-Code Bridge Workflow
 
+Web Claude is the ideation layer. Claude Code is execution. The handoff between them is a Lore Package. For the full web session workflow and Lore Package format, install `WEB.md` as a skill in claude.ai.
+
 ```
-1. Think through ideas, architecture, or features in Claude Web
-2. Ask Claude Web to generate or update a lore file from the discussion
-3. Paste the output into the correct lore file in your repo
-4. Claude Code picks it up next session via CLAUDE.md
+1. Design in Claude Web (use WEB.md skill for guided sessions)
+2. Say "generate lore package" — Web Claude outputs a structured handoff artifact
+3. Hand the Lore Package to the conductor (multi-agent) or Claude Code directly (solo)
+4. Agent reads lore, applies the package, picks up kanban tasks, and executes
 5. After building, Claude Code updates CONTEXT.md and kanban
 6. Commit lore alongside code changes
 ```

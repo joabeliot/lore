@@ -5,6 +5,7 @@
 - Write migrations for every model change
 - Log decisions to `lore/decisions/` when something significant is chosen or rejected
 - Move kanban tasks when their state changes
+- **Session-end checklist** — before wrapping up: fix kanban consistency, update CONTEXT.md header, commit lore alongside code. No stale tickets.
 
 ## Never
 - Push to main directly — staging branch only

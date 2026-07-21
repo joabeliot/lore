@@ -13,6 +13,10 @@ The original model tried to handle both bank and card with optional fields — m
 - Plaid re-links an already-linked account — should update existing `BankPlaid`, not create a new one
 - KMS key rotation — encryption should be re-applied, not just re-keyed at the KMS level
 
+## Assumptions
+- KMS key is provisioned and permissions are in place before migration runs — validate by: infra team confirms before Epic 3 kicks off
+- Legacy `PaymentMethod` table is read-only during migration window — validate by: DevOps confirms maintenance window
+
 ## Open Questions
 - Do we expose `BankPlaid` and `CardStripe` as separate API endpoints or a unified `/payment-methods/` endpoint that returns typed objects?
 
