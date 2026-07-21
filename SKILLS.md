@@ -288,6 +288,7 @@ Creates: `~/.lore/sessions/<uuid>.yml` + `lore/config.yml` + `lore/workspace/tic
 ```sh
 # Add a ticket (auto-increments: MYA-1, MYA-2...)
 lore ticket add --name "Build auth flow" --priority P1 --tags "backend,auth"
+lore ticket add --name "Auth" --context "features/auth-implementation.md" --priority P1
 
 # List tickets
 lore ticket list
@@ -299,30 +300,49 @@ lore ticket show 4cdf MYA-1
 
 # Move through lifecycle
 lore ticket schedule MYA-1          # backlog → todo
-lore ticket start MYA-1             # todo → inprogress (with assignment tracking)
+lore ticket start MYA-1 --agent agy # todo → inprogress (with assignment tracking)
 lore ticket done MYA-1              # inprogress → done
+
+# Edit a ticket
+lore ticket edit MYA-1 --name "new name" --priority P0 --tags "backend,urgent"
+lore ticket edit MYA-1 --context "features/updated.md,architecture/overview.md"
 ```
 
-Tickets are stored in `lore/workspace/ticket.json`. IDs are permanent — shorthand prefix + auto-incrementing number.
+Tickets are stored in `lore/workspace/ticket.json`. IDs are permanent — shorthand prefix + auto-incrementing number. Each ticket has a `context` array pointing to lore files, a `logs` array tracking evolution, and supports status, priority (P0-P3), tags, and assignment tracking.
 
 ---
 
 #### Session Commands
 
 ```sh
-lore session status    # Shows ticket counts per state
-lore session close     # Closes the active session
+lore session status    <uuid|prefix>   # Shows ticket counts per state
+lore session close     <uuid|prefix>   # Closes the active session
+lore session attach    --wrk-dir <path> # Register existing project as session
+lore session log       <uuid|prefix> <message> # Log to active ticket
+```
+
+---
+
+#### Other Commands
+
+```sh
+lore --version / lore version   # Print version
+lore inspect <session> MYA-1    # Pre-PR gate — delegates QA to codex
+lore edit project <uuid> [--name] [--description] [--shorthand] [--wrk-dir]
+lore update                     # Self-update (requires LORE_UPDATE_URL)
 ```
 
 ---
 
 #### Agent Usage Rules
 
-- **Use `lore ticket add` instead of editing `workspace/ticket.json` directly** — it handles ID auto-increment and storage correctly
-- **Use `lore ticket start/done` to move tickets** — preserves metadata and assignment tracking
-- **Use `lore recall` at session start** to load project context if no CONTEXT.md is available
-- **Use `lore session status`** to get a quick state snapshot before planning work
-- **Always confirm the active project first** (`lore list projects` or `lore recall <prefix>`) before adding tickets — the CLI auto-detects from cwd but verify it found the right project
+- **Use `lore ticket <command>` exclusively** — never edit `workspace/ticket.json` directly
+- **Use `lore recall <uuid>` at session start** to load project context
+- **Use `lore session status`** for a quick state snapshot before planning
+- **Use `lore inspect <session> <ticket-id>`** as a pre-PR gate to verify work
+- **Use `lore session log <uuid>`** to record what happened during a session
+- **Use `ticket edit --context`** to update context references after writing new lore files
+- **Auto-detection from cwd**: if inside a project with `lore/config.yml`, no `--session` flag needed
 
 ---
 
