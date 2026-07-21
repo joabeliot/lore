@@ -65,8 +65,8 @@ install_cli() {
     echo "[lore] Pre-built binary not available. Building from source..."
   fi
 
-  # Build from source
-  if command -v cargo &>/dev/null; then
+  # Build from source (only works when running from a local clone)
+  if [ -f "$SCRIPT_DIR/Cargo.toml" ] && command -v cargo &>/dev/null; then
     echo "[lore] Building from source (cargo)..."
     (cd "$SCRIPT_DIR" && cargo build --release) || {
       echo "[lore] Error: cargo build failed."
@@ -75,11 +75,17 @@ install_cli() {
     cp "$SCRIPT_DIR/target/release/lore" "$BIN_DIR/lore"
     chmod +x "$BIN_DIR/lore"
     echo "[lore] CLI installed → $BIN_DIR/lore"
-  else
-    echo "[lore] Error: Rust not found. Install Rust or use a pre-built release."
-    echo "[lore] See https://rustup.rs"
-    exit 1
+    return
   fi
+
+  # No pre-built binary and no local source — give clear instructions
+  echo "[lore] No pre-built binary available for your platform yet."
+  echo "[lore] To install from source:"
+  echo "[lore]   git clone https://github.com/joabeliot/lore.git"
+  echo "[lore]   cd lore"
+  echo "[lore]   cargo build --release"
+  echo "[lore]   cp target/release/lore ~/.local/bin/lore"
+  exit 1
 }
 
 install_skill() {
