@@ -296,9 +296,14 @@ Format: `[Conductor] / [Sub-agent]` — replace with actual names (e.g. `Jerry /
 4. Never delete entries — always move them
 5. In conductor sessions: Hermes assigns tasks, sub-agents never self-assign from todo
 
-### `scripts/lore` — Kanban CLI
+### `scripts/lore-kanban` — Kanban CLI (Rust)
 
-A Python command-line tool for managing the kanban board. Installed by install.sh (`--lore-script <project-path>`) or directly from `scripts/lore` in the lore repo.
+A compiled Rust binary for managing the kanban board. Installed by `install.sh` (`--lore-script <project-path>`) or built directly from `scripts/`:
+
+```sh
+cd scripts && cargo build --release
+cp target/release/lore-kanban /path/to/project/lore
+```
 
 **Commands:**
 ```sh
@@ -313,11 +318,12 @@ lore kanban list --state inprogress    # Filter by state
 **How it works:**
 - Scans all 4 kanban files to find the highest existing ID, then auto-increments
 - Moves tasks by removing them from the source file and appending to the destination
-- Preserves metadata tags (`source`, `scheduled`, `assigned`, `completed`) through moves
-- Auto-adds `started` and `completed` dates based on the current date
+- Preserves metadata tags through moves (`source`, `scheduled`, `started`/`assigned`, `completed`/`by`)
+- Auto-adds dates based on the current date
 - Appends new tasks to backlog with `source: Agent` by default
+- Single Rust binary — zero runtime deps, works on any platform (including Raspberry Pi)
 
-**Agent usage:** Use `lore kanban start #003 --agent agy` instead of manually editing kanban files. The script handles the ID counting, tag format, and cross-file movement correctly.
+**Agent usage:** Use `lore kanban start '#003' --agent agy` instead of manually editing kanban files. The script handles ID counting, tag format, and cross-file movement correctly. Always quote IDs with `#` to prevent shell interpretation.
 
 ---
 

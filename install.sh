@@ -11,7 +11,7 @@
 #   --skill-dir <path>      Install SKILLS.md as SKILL.md into this directory
 #   --conductor-dir <path>  Install CONDUCTOR.md into this directory
 #   --hooks <path>          Install post-commit hook into this project's .git/hooks/
-#   --lore-script <path>    Symlink scripts/lore into the project path as lore (executable)
+#   --lore-script <path>    Compile and copy the Rust kanban binary into this path as `lore`
 #   --help                  Show this help
 #
 # Examples:
@@ -74,16 +74,20 @@ install_hooks() {
 
 install_lore_script() {
   local target_dir="$LORE_SCRIPT_DIR"
-  local script_src="$SCRIPT_DIR/scripts/lore"
+  local binary="$SCRIPT_DIR/scripts/target/release/lore-kanban"
 
-  if [ ! -f "$script_src" ]; then
-    echo "[lore] Error: scripts/lore not found at $script_src"
-    exit 1
+  # Build release binary if it doesn't exist
+  if [ ! -f "$binary" ]; then
+    echo "[lore] Building lore-kanban binary..."
+    (cd "$SCRIPT_DIR/scripts" && cargo build --release) || {
+      echo "[lore] Error: failed to build lore-kanban (Rust required)"
+      exit 1
+    }
   fi
 
-  ln -sf "$script_src" "$target_dir/lore"
-  chmod +x "$script_src"
-  echo "[lore] Lore kanban script linked → $target_dir/lore"
+  cp "$binary" "$target_dir/lore"
+  chmod +x "$target_dir/lore"
+  echo "[lore] Lore kanban binary installed → $target_dir/lore"
 }
 
 # Parse flags
