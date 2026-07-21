@@ -1,44 +1,49 @@
 ---
-name: lore
-description: Web Claude workflow for lore. Use this skill when working in Claude Web on a project that uses lore. Covers how to run ideation sessions, generate Lore Packages, and hand off structured output to the conductor or solo agent for execution.
-version: 1.3.0
+name: limn
+description: Ideation and design layer for lore. Load this skill when working in Claude Web (or any ideation context) on a project that uses lore. Covers how to run design sessions, generate Lore Packages, and hand off structured output to the conductor or solo agent for execution.
+version: 2.0.0
+author: Joab Eliot
+license: MIT
+metadata:
+  hermes:
+    tags: [ideation, design, planning, lore-package, limn]
 ---
 
-# lore — Web Claude Workflow
+# LIMN — Ideation and Design Layer
 
-## Web is the Structured Spark
+## What This Layer Does
 
-Web Claude is the starting point. It's where thinking becomes structure — where a conversation about architecture, a product decision, or a feature idea gets shaped into something an agent can act on.
+The ideation layer is the starting point. It's where thinking becomes structure — where a conversation about architecture, a product decision, or a feature idea gets shaped into something an agent can act on.
 
-You don't build in Claude Web. You think, design, and decide. When you're ready, you say **"generate lore package"** — and Web Claude outputs a structured artifact that the conductor or solo agent picks up and executes from. That's the spark that kick-starts the whole process.
+You don't build here. You think, design, and decide. When you're ready, you say **"generate lore package"** — and the ideation agent outputs a structured artifact that the conductor or solo agent picks up and executes from. That's the spark that kick-starts the whole process.
 
 This works at any scale:
 - **Solo** — Claude Code reads the Lore Package directly and runs it
-- **Multi-agent** — the conductor consumes it, assigns tasks to sub-agents, they execute
+- **Multi-agent** — the conductor (larn skill) consumes it, assigns tasks to sub-agents, they execute
 
-The web session is always the entry point. The Lore Package is always the handoff.
+The ideation session is always the entry point. The Lore Package is always the handoff.
 
 ```
-Claude Web (you + Web Claude)
+Ideation session (you + ideation agent)
     ↓  think, design, decide
     ↓  "generate lore package"
     ↓
-Lore Package — the structured spark
-    ↓  paste into repo lore/
+Lore Package — structured handoff artifact
+    ↓  paste into repo lore/ (or deliver as .zip)
     ↓
 Conductor or Solo Agent reads it
-    ↓  applies to lore, picks up tasks
+    ↓  applies to lore, picks up tickets
     ↓
 Execution (solo or delegated)
     ↓  agents build, update lore, report back
     ↓
 lore reflects reality
-    ↓  next web session picks up from here
+    ↓  next ideation session picks up from here
 ```
 
 ---
 
-## Starting a Web Session
+## Starting an Ideation Session
 
 Paste this at the start of any Claude Web session (or set it as Project Instructions on claude.ai):
 
@@ -62,15 +67,15 @@ Ask me clarifying questions. Don't assume. Surface edge cases and tradeoffs.
 
 ---
 
-## The "Generate Lore Instructions" Command
+## The "Generate Lore Package" Command
 
-When you say **"generate lore instructions"** or **"generate lore package"**, Web Claude outputs a Lore Package using the format below. This is the handoff artifact — the output of the web session that the conductor consumes.
+When you say **"generate lore instructions"** or **"generate lore package"**, the ideation agent outputs a Lore Package using the format below. This is the handoff artifact — the output of the ideation session that the conductor consumes.
 
 ---
 
 ## Lore Package Format
 
-This is what Web Claude outputs. The conductor reads every section and applies it in order.
+This is what the ideation agent outputs. The conductor reads every section and applies it in order.
 
 ````markdown
 # Lore Package — YYYY-MM-DD
@@ -81,11 +86,11 @@ This is what Web Claude outputs. The conductor reads every section and applies i
 
 ---
 
-## Kanban — Add to Backlog
+## Tickets — Add to Backlog
 <!-- One ticket per task that came out of this session -->
-<!-- Conductor assigns real IDs (#001, #002...) when moving these to backlog -->
-- [ ] #[TBD] [task description] `[source: Web, YYYY-MM-DD]`
-- [ ] #[TBD] [task description] `[source: Web, YYYY-MM-DD]`
+<!-- Conductor runs: lore ticket add --name "[description]" for each item -->
+- [task description] `[source: Ideation, YYYY-MM-DD]`
+- [task description] `[source: Ideation, YYYY-MM-DD]`
 
 ---
 
@@ -145,7 +150,7 @@ This is what Web Claude outputs. The conductor reads every section and applies i
 
 ## Open Decisions
 <!-- Forks that came up this session but weren't resolved -->
-<!-- Conductor: treat each as a flagged blocker or research task -->
+<!-- Conductor: treat each as a flagged blocker or research ticket -->
 - [question] — options: [A vs B] — blocked on: [what's needed to decide]
 
 ---
@@ -170,11 +175,11 @@ This is what Web Claude outputs. The conductor reads every section and applies i
 
 Log entry to append:
 ```markdown
-### YYYY-MM-DD — Web Session
+### YYYY-MM-DD — Ideation Session
 [2-3 sentence summary of what was discussed and decided]
-Loaded: N/A (web session)
+Loaded: N/A (ideation session)
 Left open: [unresolved threads]
-Carry forward: [what Web Claude should be re-briefed on at the start of the next session — paste this line to re-prime fast]
+Carry forward: [what the ideation agent should be re-briefed on at the start of the next session — paste this line to re-prime fast]
 ```
 
 ---
@@ -189,11 +194,11 @@ Carry forward: [what Web Claude should be re-briefed on at the start of the next
 
 ## How the Conductor Consumes It
 
-The conductor receives the Lore Package and processes it in this order:
+The conductor (larn skill) receives the Lore Package and processes it in this order:
 
-1. Reads **Summary** — understands what came out of the web session
-2. Adds **Kanban tickets** to `lore/kanban/backlog.md`
-3. Reviews **Open Decisions** — creates a research or blocking ticket in backlog for each unresolved fork
+1. Reads **Summary** — understands what came out of the ideation session
+2. Runs `lore ticket add --name "[description]"` for each item in **Tickets — Add to Backlog**
+3. Reviews **Open Decisions** — creates a research or blocking ticket for each unresolved fork
 4. Writes **Feature files** to `lore/features/`
 5. Writes **Decision files** to `lore/decisions/`
 6. Applies **Architecture updates** to the relevant files
@@ -203,11 +208,38 @@ The conductor receives the Lore Package and processes it in this order:
 
 ---
 
-## Tips for Web Sessions
+## Lore Package as a Zip File
+
+A Lore Package can also be delivered as a `.zip` archive containing a complete `lore/` folder structure:
+
+```
+lore-package-YYYY-MM-DD.zip
+  lore/
+    features/
+      [feature-name].md
+    decisions/
+      [decision-slug].md
+    architecture/
+      [updated sections]
+    CONTEXT.md      ← with updated header + log entry
+    tickets.md      ← flat list of tickets for the conductor to add via CLI
+```
+
+The conductor loads it with:
+```bash
+lore create project --unzip lore-package-YYYY-MM-DD.zip --name "..." --shorthand ABC
+```
+
+This is the foundation for the future automated pipeline — where ideation packages are dropped into a shared location and the conductor picks them up automatically.
+
+---
+
+## Tips for Ideation Sessions
 
 - **Lore is the bible of this project.** Don't suggest anything that contradicts what's already decided there. If you think lore should change, flag it — don't silently contradict it.
-- Paste the relevant lore files at the start: CONTEXT.md, GUARDRAILS.md, the feature or architecture file you're working through
-- The more context you give Web Claude, the better the Lore Package it generates
-- If a decision is complex, ask Web Claude to draft the `decisions/` file content during the session — not just at the end
+- Paste the relevant lore files at the start of the session: CONTEXT.md, GUARDRAILS.md, the feature or architecture file you're working through
+- The more context you give, the better the Lore Package that comes out
+- If a decision is complex, draft the `decisions/` file content during the session — not just at the end
 - You can do multiple "generate lore package" calls in one session as sub-topics close out
-- Web Claude can't read your repo — you have to paste the content in
+- The ideation agent can't read your repo — you have to paste the content in
+- Always include a **Carry forward** line in the CONTEXT.md log entry — it lets you re-prime the next ideation session with a single paste

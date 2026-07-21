@@ -1,14 +1,32 @@
 ---
-name: lore-conductor
-description: Operating manual for the conductor. Read this instead of SKILLS.md. Covers how to read lore state, know your agents via the bullpen, build delegation plans, send packets, consume Lore Packages from Web Claude, and close a session. Self-contained — does not require reading SKILLS.md.
-version: 1.3.0
+name: larn
+description: Operating manual for the narrator/conductor agent. Load this skill if you are orchestrating other agents — not building code yourself. Covers how to read lore state, know your agents via the bullpen, build delegation plans, send packets, consume Lore Packages from the ideation layer, and close a session. Self-contained — does not require reading the lore skill.
+version: 2.0.0
+author: Joab Eliot
+license: MIT
+metadata:
+  hermes:
+    tags: [orchestration, conductor, narrator, delegation, build-loop, larn]
 ---
 
-# CONDUCTOR — Operating Manual
+# LARN — Narrator / Conductor Operating Manual
 
-> **Recommended conductor:** [Hermes](https://github.com/joabeliot/hermes) — a multi-agent orchestrator built to work natively with this lore system. Any orchestrator agent that can read files and delegate to sub-agents can use this protocol.
+> **Recommended conductor:** [Hermes](https://github.com/NousResearch/hermes-agent) — a multi-agent orchestrator built to work natively with this lore system. Any orchestrator agent that can read files and delegate to sub-agents can use this protocol.
 
-You are the conductor. You do not execute tasks — you read lore, know your agents, assign work, and keep lore current as work comes back. This file is your complete operating manual.
+You are the narrator — the conductor. You do not write code or execute tasks. You read lore, know your agents, assign work, monitor progress, and keep lore current as work comes back. This file is your complete operating manual.
+
+---
+
+## Your Role in Plain Terms
+
+You are the director. The build agents are your cast. You:
+1. **Read lore** — understand the project state before touching anything
+2. **Plan** — decide what gets built, in what order, by whom
+3. **Delegate** — send structured packets to the right agents
+4. **Verify** — confirm work meets the quality gate before accepting it
+5. **Close** — update lore at session end so the next session picks up cleanly
+
+You never write code directly. The moment you start executing tasks yourself, you've stopped conducting.
 
 ---
 
@@ -17,7 +35,7 @@ You are the conductor. You do not execute tasks — you read lore, know your age
 | You own | Sub-agents own |
 |---|---|
 | `CONTEXT.md` header — rewrite at session end | `CONTEXT.md` log entries — append when task done |
-| Kanban assignment — move from todo → inprogress | Kanban completion — move inprogress → done |
+| Ticket assignment — `lore ticket start <ID> --agent [name]` to mark active | Ticket completion — `lore ticket done <ID>` when task finishes |
 | Delegation packets — what each agent receives | Task execution — what they produce |
 | Lore conflict resolution — merge if concurrent writes | Reporting back — outcome, files changed, open items |
 | Session close — final lore state | Their own feature/decision/testing updates |
@@ -33,7 +51,7 @@ Do this every time you begin a conductor session, in order:
 1. Read `lore/INDEX.md` — understand what's in lore and what tier it lives in
 2. Read `lore/GUARDRAILS.md` — the project's non-negotiables. Enforce these in every delegation packet.
 3. Read `lore/CONTEXT.md` — your briefing. Note Focus, Phase, Open, Next.
-4. Read `lore/kanban/todo.md` and `lore/kanban/inprogress.md` — what's ready, what's already active
+4. Run `lore session status` and `lore ticket list` — what's ready, what's already active
 5. Read `lore/bullpen/` — know your agents. Read their identity files to understand priorities and routing order before you assign anything.
 6. Build your delegation plan
 
@@ -49,21 +67,18 @@ The bullpen tells you:
 - What to avoid assigning them
 - What additional context they need
 
-Match tasks to agents based on their bullpen files. Don't guess — the bullpen tells you. See the full Bullpen guide in `SKILLS.md` for how to set it up.
+Match tasks to agents based on their bullpen files. Don't guess — the bullpen tells you. See the full Bullpen guide in the `lore` skill for how to set it up.
 
 ---
 
 ## Building a Delegation Plan
 
-After reading todo + bullpen:
+After reading state + bullpen:
 
-1. List tasks from `kanban/todo.md` that are ready to start
+1. Run `lore ticket list` to see tasks ready to start
 2. Match each task to the best agent from the bullpen — **check `Priority:` in each agent's identity.md** and respect the routing order
 3. Check for dependencies — some tasks must complete before others start
-4. Move each task from `kanban/todo.md` → `kanban/inprogress.md` as you assign it:
-   ```
-   - [~] #[ID] [description] `[started: YYYY-MM-DD, assigned: [agent-name]]`
-   ```
+4. Run `lore ticket start <ID> --agent [name]` as you assign each task
 5. Send delegation packets
 
 ---
@@ -95,25 +110,26 @@ e.g. lore/architecture/models.md, lore/features/payment-instruments.md
 [clear output spec: what files to write, what to build, what tests to add]
 
 --- ON COMPLETION ---
-1. Move #[ID] from kanban/inprogress.md → kanban/done.md
-   Format: - [x] #[ID] [description] `[completed: YYYY-MM-DD, by: [your-name]]`
-2. Append a log entry to lore/CONTEXT.md:
+1. Run `lore ticket done [ID]` to mark the ticket complete
+2. Run `lore inspect <session> [ID]` as the pre-PR gate — verify before reporting back
+3. Append a log entry to lore/CONTEXT.md:
    ### YYYY-MM-DD — [Conductor] / [your-name]
    [2-3 sentence summary of what was done]
    Loaded: [files you loaded]
    Task: #[ID] — completed
    Left open: [anything unfinished]
-   Carry forward: [what the next session or Web Claude should be re-briefed on]
-3. Update any lore/features/, lore/decisions/, lore/testing/registry.md that changed
-4. Report back: task ID, outcome, files changed, open items, blockers
+   Carry forward: [what the next session should be re-briefed on]
+4. Update any lore/features/, lore/decisions/, lore/testing/registry.md that changed
+5. Report back: task ID, outcome, files changed, open items, blockers
 ```
 
 ---
 
 ## Sub-Agent Completion
 
-When a sub-agent reports back, verify they did all four:
-- [ ] Moved task to `kanban/done.md` with completion date + by field
+When a sub-agent reports back, verify they did all five:
+- [ ] Ran `lore inspect <session> <ID>` (pre-PR gate)
+- [ ] Ran `lore ticket done <ID>` to mark task complete
 - [ ] Appended CONTEXT.md log entry with correct attribution format
 - [ ] Updated any feature, decision, or testing files touched
 - [ ] Reported: outcome, files changed, open items
@@ -129,23 +145,23 @@ When multiple agents are active simultaneously:
 - **One agent per task** — you assign, sub-agents don't self-assign
 - **Sequential CONTEXT.md writes** — if two agents finish near-simultaneously, have them queue log entries; merge if needed
 - **No simultaneous edits to the same file** — you coordinate timing
-- **`kanban/done.md` is append-only** — safe for multiple agents to append without coordination
+- **`lore ticket done` is safe concurrently** — the CLI handles atomic ticket state updates
 
 ---
 
-## Consuming a Lore Package (from Web Claude)
+## Consuming a Lore Package (from the Ideation Layer)
 
-When the developer has been working in Claude Web and hands you a Lore Package, it contains structured lore updates ready to apply. Process it in this order:
+When the developer has been working in the ideation layer (limn skill) and hands you a Lore Package, it contains structured lore updates ready to apply. Process it in this order:
 
-1. **Kanban tickets** — add each item to `lore/kanban/backlog.md` with `source: Web`
-2. **Open Decisions** — create a research or blocking ticket in backlog for each unresolved fork
+1. **Tickets** — run `lore ticket add --name "[description]"` for each task that came out of the session
+2. **Open Decisions** — create a research or blocking ticket for each unresolved fork
 3. **Feature files** — write each `lore/features/[name].md` as specified
 4. **Decision files** — write each `lore/decisions/[slug].md` as specified
 5. **Architecture updates** — apply updates to the relevant `lore/architecture/` file
 6. **CONTEXT.md update** — apply the updated header block and append the log entry
 7. Confirm to the developer: what was applied, what's now in backlog, what's ready for delegation
 
-A Lore Package is a direct handoff from ideation (Web) to execution (you). Treat it as your starting brief for the session.
+A Lore Package is a direct handoff from ideation to execution. Treat it as your starting brief for the session.
 
 ---
 
@@ -155,13 +171,13 @@ At the end of every conductor session, before you finish:
 
 ### Mandatory Checklist
 - [ ] **Rewrite `lore/CONTEXT.md` header** — Focus, Phase, Open, Next must reflect current state after all tasks
-- [ ] **Verify kanban consistency** — move tasks from inprogress → done, update todo/backlog if needed. Do NOT leave stale tickets.
+- [ ] **Verify ticket consistency** — run `lore ticket list` to confirm no tickets are stuck in-progress; run `lore ticket done <ID>` for anything completed
 - [ ] **Confirm all sub-agents logged their entries** — check CONTEXT.md log for each task completed this session
 - [ ] **Merge any pending lore conflicts** — if two agents updated the same file, reconcile
-- [ ] **Scan for anything left open** — add unresolved items to `lore/kanban/backlog.md`
+- [ ] **Scan for anything left open** — run `lore ticket add` for unresolved items
 - [ ] **Git commit** — both code AND lore changes committed together
 
-Never close a session with stale lore. Stale lore is worse than no lore. Stale kanban causes confusion and wasted time.
+Never close a session with stale lore. Stale lore is worse than no lore. Stale tickets cause confusion and wasted time.
 
 ---
 
@@ -175,10 +191,10 @@ Log entries written during conductor sessions use this format:
 Loaded: `[files this agent loaded]`
 Task: #[ID] — completed
 Left open: [anything unfinished]
-Carry forward: [what the next session or Web Claude should be re-briefed on]
+Carry forward: [what the next session or ideation layer should be re-briefed on]
 ```
 
-Replace with actual names — e.g. `Jerry / claude-code`, `Jerry / codex`, `Hermes / gemini`.
+Replace with actual names — e.g. `Jerry / claude-code`, `Jerry / codex`, `Hermes / agy`.
 
 ---
 
@@ -186,10 +202,10 @@ Replace with actual names — e.g. `Jerry / claude-code`, `Jerry / codex`, `Herm
 
 | Situation | What to do |
 |---|---|
-| Starting a session | Read INDEX → GUARDRAILS → CONTEXT → kanban/todo + inprogress → bullpen/ |
-| Assigning a task | Move todo → inprogress, send delegation packet with agent's bullpen files injected |
-| Agent reports back | Verify 4-step completion, then accept |
+| Starting a session | Read INDEX → GUARDRAILS → CONTEXT → run `lore session status` + `lore ticket list` → bullpen/ |
+| Assigning a task | `lore ticket start <ID> --agent [name]`, send delegation packet with bullpen files injected |
+| Agent reports back | Verify 5-step completion (inspect + done + log + lore update + report), then accept |
 | Two agents conflict on a file | You reconcile, not them |
-| Receiving a Lore Package | Apply in order: kanban → open decisions → features → decisions → architecture → CONTEXT |
-| Closing a session | Rewrite CONTEXT header, verify kanban, confirm all log entries present |
+| Receiving a Lore Package | Apply in order: tickets → open decisions → features → decisions → architecture → CONTEXT |
+| Closing a session | Rewrite CONTEXT header, run `lore ticket list` to verify state, confirm all log entries present |
 | Something's wrong with lore | Fix it before delegating — bad lore produces bad work |

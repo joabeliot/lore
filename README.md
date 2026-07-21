@@ -1,199 +1,153 @@
-# lore
+<div align="center">
+  <h1>🗂️ Lore</h1>
+  <p><em>Keep your AI agents in the loop — project memory for the age of AI-assisted development.</em></p>
+</div>
 
-A `lore/` folder you commit to your project. It's the single source of truth — the bible of the project — that any developer, AI agent, or new team member reads to understand what's being built, why, and how.
-
-Not a wiki. Not docs. The living interface between humans and the codebase.
-
-> **📖 Lore is the bible of this project.** Check it before every action. Update it after every change. If it's not in lore, it didn't happen. If lore says it, it's law. Every session starts and ends here.
+<p align="center">
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#cli-commands">CLI Commands</a> •
+  <a href="#skills">Skills</a> •
+  <a href="#installation">Installation</a>
+</p>
 
 ---
 
-## The Problem
+**Lore** is a project memory system for AI-assisted development. It gives your AI agents (Claude, Gemini, Codex, Hermes) the context they need to work effectively on your projects — without you having to re-explain everything every session.
 
-AI agents start cold every session. You re-explain the project, re-establish context, re-answer questions the last session already resolved. Nothing carries over.
+It's two things in one:
 
-`lore` fixes that. It's committed in the repo, travels with the code, and gives every agent — and every new dev — the full picture before they touch anything.
+1. **A CLI tool** (`lore`) — manage project sessions, tickets, and context
+2. **A set of AI skills** — teach your agents how to use lore effectively
+
+---
+
+## Quick Start
+
+```bash
+# Install the CLI
+curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | bash
+
+# Create a project
+lore create project \
+  --name "my-app" \
+  --description "What my app does" \
+  --wrk-dir "/path/to/project" \
+  --shorthand MYA
+
+# Add tickets
+lore ticket add --name "Build auth" --priority P1 --context "features/auth.md"
+
+# Work with agents
+lore ticket start MYA-1 --agent claude
+# ... agent builds the feature ...
+lore inspect MYA-1   # Pre-PR gate
+lore ticket done MYA-1
+```
 
 ---
 
 ## How It Works
 
+Lore stores project context in two places:
+
+| Where | What | Purpose |
+|---|---|---|
+| `~/.lore/sessions/` | Global session registry (YAML) | One file per project — links the CLI to the project's lore folder |
+| `lore/` in your project | Project lore folder | Markdown files: features, architecture, decisions, testing, guardrails |
+
+The `lore` CLI bridges these two — it reads your session to know which project you're working on, then reads/writes tickets and context from the project's lore folder.
+
+**The key insight:** Tickets reference context files in your lore folder. When you delegate to an AI agent, lore hands over the ticket + the relevant feature docs + architecture docs + decisions. The agent builds from your lore, not from guesswork.
+
+---
+
+## CLI Commands
+
+```
+lore create project     Create a new project session
+lore recall             Print project context (human or --json)
+lore list projects      List all registered sessions
+lore delete project     Remove a session
+lore ticket add         Add a ticket (auto-incrementing ID)
+lore ticket list        List tickets (filter by status/priority)
+lore ticket show        Show ticket details
+lore ticket schedule    backlog → todo
+lore ticket start       todo → inprogress (assign an agent)
+lore ticket done        inprogress → done
+lore ticket edit        Edit ticket fields (context, priority, etc.)
+lore session attach     Register an existing project's lore folder
+lore session close      Close a session
+lore session status     Show ticket counts per state
+lore session log        Log a message to a ticket
+lore inspect            Pre-PR gate — verify context, build, tests
+lore edit project       Edit project settings
+lore update             Self-update
+```
+
+---
+
+## Skills
+
+Lore ships with AI agent skills that teach your tools how to use the system:
+
+| Skill | What it teaches |
+|---|---|
+| **lore** | How the lore memory system works — CLI usage, ticket lifecycle, context files |
+| **larn** | How to orchestrate agents — planning, delegation, build loops, inspect |
+| **limn** | How to ideate and package ideas into lore-ready form |
+
+Install skills with:
+```bash
+./install.sh --skill-dir ~/.hermes/skills/lore       # For Hermes
+./install.sh --skill-dir ~/.claude/skills/lore        # For Claude Code
+```
+
+---
+
+## Installation
+
+### Via curl (recommended)
+```bash
+curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | bash
+```
+
+### Via install.sh
+```bash
+git clone https://github.com/joabeliot/lore.git
+cd lore
+./install.sh [--skill-dir <path>] [--hooks <project-path>]
+```
+
+### From source
+```bash
+# Requires Rust
+cargo build --release
+cp target/release/lore ~/.local/bin/lore
+```
+
+---
+
+## Project Structure
+
 ```
 project/
-  CLAUDE.md                  ← AI session entry point
-  lore/
-    INDEX.md                 ← Always loaded: TOC + loading guide
-    GUARDRAILS.md            ← Always loaded: project rules
-    CONTEXT.md               ← Always loaded: current state + session log
-    OG.md                    ← 🔒 Your raw dev journal (human-only)
-    MISSION.md               ← 🔒 Project soul (human-only)
-    CHANGELOG.md             ← Auto-generated by git hook
-    kanban/
-      backlog.md             ← Captured, not yet scheduled
-      todo.md                ← Scheduled, not started
-      inprogress.md          ← Active work
-      done.md                ← Completed
-    architecture/
-      overview.md            ← Service map, data flow, infra
-      models.md              ← Data models and schemas
-      apis.md                ← API contracts and external services
-    features/                ← One .md per feature
-    ideas/                   ← Pre-feature captures
-    testing/
-      registry.md            ← What's covered, what's not
-    decisions/               ← Architecture Decision Records
-    bullpen/                 ← Agent roster (one folder per agent)
-    skills/                  ← Claude skills (shared + custom)
-```
-
-Full spec for every file — templates, contracts, update rules — is in [`SKILLS.md`](SKILLS.md).
-
----
-
-## Install
-
-```bash
-git clone https://github.com/joabeliot/lore
-cd lore
-./install.sh --skill-dir ~/.claude/skills/lore
-```
-
-This copies `SKILLS.md` to `~/.claude/skills/lore/SKILL.md`. Claude Code can now use the `lore` skill.
-
-### WEB.md — Claude Web ideation sessions
-Upload `WEB.md` as a skill on claude.ai Projects. Use it when designing in Claude Web before handing off to a code agent. Say `generate lore package` to get the structured handoff artifact.
-
-### CONDUCTOR.md — multi-agent setups
-```bash
-./install.sh --conductor-dir ~/.hermes/skills/lore
-```
-Install to wherever your orchestrator reads skills from. This is the conductor's operating manual — separate from the agent skill. Run `./install.sh --help` to see all options.
-
-### Install git hooks (optional but recommended)
-
-The `post-commit` hook auto-generates `lore/CHANGELOG.md` on every commit:
-
-```bash
-./install.sh --skill-dir ~/.claude/skills/lore --hooks /path/to/your/project
+├── lore/
+│   ├── config.yml              ← Project config (references session)
+│   ├── workspace/
+│   │   └── ticket.json         ← All tickets as structured JSON
+│   ├── features/               ← Feature descriptions
+│   ├── architecture/           ← System design docs
+│   ├── decisions/              ← Architecture Decision Records
+│   ├── testing/                ← Test coverage registry
+│   ├── INDEX.md                ← TOC for AI agents
+│   ├── GUARDRAILS.md           ← Project rules
+│   └── CONTEXT.md              ← Current state + session log
+└── CLAUDE.md or AGENTS.md      ← AI entry point
 ```
 
 ---
 
-## Tiered Loading
+## License
 
-`lore` is designed to be token-efficient. Not everything loads every session.
-
-| Tier | Files | When |
-|---|---|---|
-| **Always** | `INDEX.md`, `GUARDRAILS.md`, `CONTEXT.md` | Every session |
-| **On-Demand** | `kanban/`, `architecture/`, `features/`, `testing/`, `decisions/`, `bullpen/` | Load what the task needs |
-| **Never Auto** | `OG.md`, `MISSION.md`, `CHANGELOG.md` | Pull explicitly |
-
-Your CLAUDE.md hook loads Tier 1. Agents load Tier 2 files as needed and log which ones they used.
-
----
-
-## Init a Project
-
-Once the skill is installed, tell Claude Code:
-
-**New project:**
-> "Init lore for this project"
-
-**Existing repo:**
-> "Read this repo and generate lore from what you find"
-
-Claude scaffolds the folder, populates what it can infer, stubs the rest, and tells you what still needs your input.
-
----
-
-## Day-to-Day Usage
-
-### Starting a session
-Claude reads `INDEX.md` → `GUARDRAILS.md` → `CONTEXT.md` automatically (via CLAUDE.md hook). No manual loading needed.
-
-### Picking up a task
-Claude reads `kanban/todo.md`, picks a task, moves it to `kanban/inprogress.md`.
-
-### During a session
-Claude loads what it needs from Tier 2 — architecture files, the relevant feature doc, test registry — and names what it loaded.
-
-### Ending a session
-Claude:
-1. Rewrites the `CONTEXT.md` header with current state
-2. Appends a compact log entry (2-3 sentences, what was done, what's open)
-3. Moves completed kanban tasks to `done.md`
-4. Updates any feature files, decisions, or test registry that changed
-
-### Committing
-Commit `lore/` alongside your code. They move together.
-
----
-
-## The Kanban Board
-
-Drop tickets in `kanban/backlog.md` with a `#ID` and description. Claude picks them up, moves them through `todo.md` → `inprogress.md` → `done.md`. IDs never change.
-
-```markdown
-# Backlog
-- [ ] #001 Build the payment webhook handler `[source: JB, 2026-07-21]`
-```
-
-Agents can also propose new tasks — they add them to backlog with `source: Agent`.
-
----
-
-## Human-Only Files
-
-Two files are yours alone. Claude reads them, never writes them:
-
-- **`OG.md`** — your unfiltered thoughts, doubts, instincts about the project
-- **`MISSION.md`** — why this project should exist
-
-Everything else can be AI-generated or AI-updated, but should be human-reviewed before committing.
-
----
-
-## Hook Automation (Hybrid System)
-
-Hooks handle what agents shouldn't have to track manually:
-
-| What | How |
-|---|---|
-| `lore/CHANGELOG.md` | `post-commit` hook appends every commit automatically |
-
-Agents handle the rest: CONTEXT.md, kanban, feature docs, decisions, test registry.
-
----
-
-## Agent Creative Additions
-
-Agents can propose new lore structure for a project — a new folder, a new file type, a new convention. If it's useful and JB approves it, it gets added to the canonical spec in this repo.
-
-Proposals live in `lore/INDEX.md` under **Proposed Additions** until reviewed.
-
----
-
-## Web-to-Code Bridge
-
-Claude Web is the ideation layer. Claude Code is execution. The handoff is a Lore Package.
-
-```
-1. Design in Claude Web (use WEB.md as a skill for guided sessions)
-2. Say "generate lore package" — Web Claude outputs a structured handoff artifact
-3. Hand the Lore Package to your conductor (multi-agent) or Claude Code (solo)
-4. Agent applies it to lore, picks up kanban tasks, and executes
-5. After building, Claude Code updates CONTEXT.md and kanban
-6. Commit lore alongside code
-```
-
----
-
-## Full Spec
-
-| File | Purpose |
-|---|---|
-| [`SKILLS.md`](SKILLS.md) | Full spec: templates, file contracts, init flows, session rules |
-| [`WEB.md`](WEB.md) | Web Claude workflow — ideation sessions and Lore Package format |
-| [`CONDUCTOR.md`](CONDUCTOR.md) | Conductor operating manual — multi-agent delegation and lore sync |
-| [`install.sh`](install.sh) | Composable installer — run `./install.sh --help` for all options |
+MIT
