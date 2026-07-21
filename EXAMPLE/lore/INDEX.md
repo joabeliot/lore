@@ -5,7 +5,6 @@
 ## Tier 2 — Load When Relevant
 | File / Dir | Load when |
 |---|---|
-| `kanban/` | Planning work or picking up a task |
 | `architecture/overview.md` | Making structural or infra changes |
 | `architecture/models.md` | Touching data models or migrations |
 | `architecture/apis.md` | Adding or changing API endpoints |

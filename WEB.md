@@ -1,7 +1,7 @@
 ---
 name: lore
 description: Web Claude workflow for lore. Use this skill when working in Claude Web on a project that uses lore. Covers how to run ideation sessions, generate Lore Packages, and hand off structured output to the conductor or solo agent for execution.
-version: 1.3.0
+version: 1.4.0
 ---
 
 # lore — Web Claude Workflow
@@ -81,11 +81,11 @@ This is what Web Claude outputs. The conductor reads every section and applies i
 
 ---
 
-## Kanban — Add to Backlog
+## Tickets — Add to Backlog
 <!-- One ticket per task that came out of this session -->
-<!-- Conductor assigns real IDs (#001, #002...) when moving these to backlog -->
-- [ ] #[TBD] [task description] `[source: Web, YYYY-MM-DD]`
-- [ ] #[TBD] [task description] `[source: Web, YYYY-MM-DD]`
+<!-- Conductor runs: lore ticket add "[description]" for each item -->
+- [task description] `[source: Web, YYYY-MM-DD]`
+- [task description] `[source: Web, YYYY-MM-DD]`
 
 ---
 
@@ -192,8 +192,8 @@ Carry forward: [what Web Claude should be re-briefed on at the start of the next
 The conductor receives the Lore Package and processes it in this order:
 
 1. Reads **Summary** — understands what came out of the web session
-2. Adds **Kanban tickets** to `lore/kanban/backlog.md`
-3. Reviews **Open Decisions** — creates a research or blocking ticket in backlog for each unresolved fork
+2. Runs `lore ticket add` for each item in **Tickets — Add to Backlog**
+3. Reviews **Open Decisions** — creates a research or blocking ticket via `lore ticket add` for each unresolved fork
 4. Writes **Feature files** to `lore/features/`
 5. Writes **Decision files** to `lore/decisions/`
 6. Applies **Architecture updates** to the relevant files

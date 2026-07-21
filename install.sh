@@ -11,7 +11,7 @@
 #   --skill-dir <path>      Install SKILLS.md as SKILL.md into this directory
 #   --conductor-dir <path>  Install CONDUCTOR.md into this directory
 #   --hooks <path>          Install post-commit hook into this project's .git/hooks/
-#   --lore-script <path>    Compile and copy the Rust kanban binary into this path as `lore`
+#   --lore-script <path>    Compile and copy the Rust lore binary into this path as `lore`
 #   --help                  Show this help
 #
 # Examples:
@@ -24,7 +24,7 @@
 #   With hooks:
 #     ./install.sh --skill-dir ~/.claude/skills/lore --hooks /path/to/your/project
 #
-#   With lore kanban script (run from project root):
+#   With lore CLI (run from project root):
 #     ./install.sh --lore-script /path/to/your/project
 #
 #   Full install for a conductor agent:
@@ -78,16 +78,16 @@ install_lore_script() {
 
   # Build release binary if it doesn't exist
   if [ ! -f "$binary" ]; then
-    echo "[lore] Building lore-kanban binary..."
+    echo "[lore] Building lore binary..."
     (cd "$SCRIPT_DIR/scripts" && cargo build --release) || {
-      echo "[lore] Error: failed to build lore-kanban (Rust required)"
+      echo "[lore] Error: failed to build lore binary (Rust required)"
       exit 1
     }
   fi
 
   cp "$binary" "$target_dir/lore"
   chmod +x "$target_dir/lore"
-  echo "[lore] Lore kanban binary installed → $target_dir/lore"
+  echo "[lore] Lore CLI installed → $target_dir/lore"
 }
 
 # Parse flags

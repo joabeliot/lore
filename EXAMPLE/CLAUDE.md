@@ -18,13 +18,13 @@ See `lore/MISSION.md` for the full project mission.
 - `INDEX.md` — TOC and loading guide (read this first)
 - `GUARDRAILS.md` — project rules
 - `CONTEXT.md` — current state and session log
-- `kanban/` — work queue (backlog → todo → inprogress → done)
+- `workspace/ticket.json` — ticket state (use `lore ticket` CLI to manage)
 - `architecture/` — system design, models, APIs
 - `features/` — one file per feature
 - `testing/registry.md` — test coverage map
 - `decisions/` — architecture decision records
 - `bullpen/` — agent roster (conductor sessions)
-- `scripts/lore` — kanban CLI (Rust binary): `lore kanban add/schedule/start/done/list`
+- `lore` CLI — global Rust binary: `lore ticket add/list/start/done`, `lore session status`, `lore recall`
 
 ## Current Focus
 Epic 3: Payment instrument architecture redesign
@@ -35,8 +35,8 @@ This project uses `lore` for AI memory. The session-end checklist is **mandatory
 ### Session Close Checklist
 At end of every conductor / build session:
 1. **Rewrite `CONTEXT.md` header** — Focus, Phase, Open, Next must reflect current state
-2. **Verify kanban consistency** — move inprogress → done, update todo/backlog. NO stale tickets.
+2. **Verify ticket consistency** — run `lore ticket list`; run `lore ticket done <ID>` for anything completed. NO stale tickets.
 3. **Confirm all sub-agent log entries** — check CONTEXT.md log for each completed task
 4. **Merge any lore conflicts** — if two agents touched the same file, reconcile
-5. **Scan for open items** — add unresolved items to `kanban/backlog.md`
+5. **Scan for open items** — run `lore ticket add "[description]"` for unresolved items
 6. **Git commit** — both code AND lore changes committed together

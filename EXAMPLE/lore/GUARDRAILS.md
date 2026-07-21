@@ -4,12 +4,12 @@
 - Read `lore/CONTEXT.md` before starting any work
 - Write migrations for every model change
 - Log decisions to `lore/decisions/` when something significant is chosen or rejected
-- Move kanban tasks when their state changes
-- **Session-end checklist** — before wrapping up: fix kanban consistency, update CONTEXT.md header, commit lore alongside code. No stale tickets.
+- Use `lore ticket start/done <ID>` when ticket state changes
+- **Session-end checklist** — before wrapping up: run `lore ticket list` to verify ticket state, update CONTEXT.md header, commit lore alongside code. No stale tickets.
 
 ## Never
 - Push to main directly — staging branch only
-- Delete entries from `CONTEXT.md`, `kanban/done.md`, or `decisions/`
+- Delete entries from `CONTEXT.md` or `decisions/`
 - Invent API responses — check `architecture/apis.md` first
 - Skip the session log at the end of a session
 
