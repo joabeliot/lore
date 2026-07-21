@@ -8,7 +8,7 @@
 #
 # Flags:
 #   --skill-dir <path>  Install a specific skill (e.g., ~/.hermes/skills/lore)
-#   --skill <name>      Skill to install: lore (default), lere, limn, all
+#   --skill <name>      Skill to install: lore (default), larn, limn, all
 #   --hooks <path>      Install git hooks into a project
 #   --help              Show this help
 #
@@ -87,15 +87,15 @@ install_skill() {
   local target_dir="$SKILL_DIR"
 
   case "$skill_name" in
-    lore|lere|limn) ;;
+    lore|larn|limn) ;;
     all)
       install_skill lore
-      install_skill lere
+      install_skill larn
       install_skill limn
       return
       ;;
     *)
-      echo "[lore] Unknown skill: $skill_name. Valid: lore, lere, limn, all"
+      echo "[lore] Unknown skill: $skill_name. Valid: lore, larn, limn, all"
       exit 1
       ;;
   esac

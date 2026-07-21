@@ -596,7 +596,7 @@ At the end of every session, Claude must:
 
 ## Multi-Agent Protocol
 
-> **If you are the conductor (orchestrator):** load the `lere` skill — it is your complete operating manual and supersedes this summary.
+> **If you are the conductor (orchestrator):** load the `larn` skill — it is your complete operating manual and supersedes this summary.
 > **If you are a sub-agent receiving delegated work:** read this section to understand your role in the conductor model.
 
 When a conductor (e.g. Hermes/Jerry) coordinates multiple sub-agents, `lore` becomes the shared state layer. This protocol keeps every agent synchronized and prevents conflicts.
@@ -606,7 +606,7 @@ When a conductor (e.g. Hermes/Jerry) coordinates multiple sub-agents, `lore` bec
 | Type | Who | Protocol |
 |---|---|---|
 | **Solo** | Developer + one agent | Standard Agent Session Workflow above |
-| **Conductor session** | Conductor + sub-agents | lere skill protocol |
+| **Conductor session** | Conductor + sub-agents | larn skill protocol |
 
 ### Conductor Startup (sub-agent's understanding)
 

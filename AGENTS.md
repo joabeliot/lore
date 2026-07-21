@@ -34,11 +34,11 @@ curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | ba
 | Skill | File | Who reads it | What it covers |
 |---|---|---|---|
 | **lore** | `skills/lore/SKILL.md` | Any agent working on a project with lore | Full system: file contracts, session workflow, tiered loading, CLI commands, init flows, bullpen |
-| **lere** | `skills/lere/SKILL.md` | Conductor / narrator agents (Hermes, Jerry) | Orchestration: startup protocol, delegation packets, build loop, session close |
+| **larn** | `skills/larn/SKILL.md` | Conductor / narrator agents (Hermes, Jerry) | Orchestration: startup protocol, delegation packets, build loop, session close |
 | **limn** | `skills/limn/SKILL.md` | Ideation agents (Claude Web, design sessions) | Generating Lore Packages from ideas and handing off to the conductor |
 
 Load **lore** if you're a builder or solo agent.  
-Load **lere** if you're orchestrating other agents.  
+Load **larn** if you're orchestrating other agents.  
 Load **limn** if you're in an ideation/design session generating structured output.
 
 ## Key Rules

@@ -194,7 +194,7 @@ Carry forward: [what the ideation agent should be re-briefed on at the start of 
 
 ## How the Conductor Consumes It
 
-The conductor (lere skill) receives the Lore Package and processes it in this order:
+The conductor (larn skill) receives the Lore Package and processes it in this order:
 
 1. Reads **Summary** — understands what came out of the ideation session
 2. Runs `lore ticket add --name "[description]"` for each item in **Tickets — Add to Backlog**

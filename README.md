@@ -94,7 +94,7 @@ Lore ships with AI agent skills that teach your tools how to use the system:
 | Skill | What it teaches |
 |---|---|
 | **lore** | How the lore memory system works — CLI usage, ticket lifecycle, context files |
-| **lere** | How to orchestrate agents — planning, delegation, build loops, inspect |
+| **larn** | How to orchestrate agents — planning, delegation, build loops, inspect |
 | **limn** | How to ideate and package ideas into lore-ready form |
 
 Install skills with:

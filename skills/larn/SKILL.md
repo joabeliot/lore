@@ -1,15 +1,15 @@
 ---
-name: lere
+name: larn
 description: Operating manual for the narrator/conductor agent. Load this skill if you are orchestrating other agents — not building code yourself. Covers how to read lore state, know your agents via the bullpen, build delegation plans, send packets, consume Lore Packages from the ideation layer, and close a session. Self-contained — does not require reading the lore skill.
 version: 2.0.0
 author: Joab Eliot
 license: MIT
 metadata:
   hermes:
-    tags: [orchestration, conductor, narrator, delegation, build-loop, lere]
+    tags: [orchestration, conductor, narrator, delegation, build-loop, larn]
 ---
 
-# LERE — Narrator / Conductor Operating Manual
+# LARN — Narrator / Conductor Operating Manual
 
 > **Recommended conductor:** [Hermes](https://github.com/joabeliot/hermes) — a multi-agent orchestrator built to work natively with this lore system. Any orchestrator agent that can read files and delegate to sub-agents can use this protocol.
 
