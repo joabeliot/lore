@@ -1,4 +1,5 @@
 mod commands;
+mod dashboard;
 mod models;
 
 use clap::{Parser, Subcommand};
@@ -61,6 +62,12 @@ enum Commands {
     },
     /// Update lore to the latest version
     Update,
+    /// Show a dashboard in the browser
+    Dashboard {
+        /// Port to serve on (default: 8080)
+        #[arg(long, default_value = "8080")]
+        port: u16,
+    },
 }
 
 #[derive(Subcommand)]
@@ -356,6 +363,7 @@ fn main() {
             } => commands::cmd_edit_project(input, name.as_deref(), description.as_deref(), shorthand.as_deref(), wrk_dir.as_deref()),
         },
         Commands::Update => commands::cmd_update(),
+        Commands::Dashboard { port } => dashboard::cmd_dashboard(*port),
     };
 
     if let Err(e) = result {
