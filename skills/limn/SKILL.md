@@ -19,7 +19,7 @@ You don't build here. You think, design, and decide. When you're ready, you say 
 
 This works at any scale:
 - **Solo** — Claude Code reads the Lore Package directly and runs it
-- **Multi-agent** — the conductor (lere skill) consumes it, assigns tasks to sub-agents, they execute
+- **Multi-agent** — the conductor (larn skill) consumes it, assigns tasks to sub-agents, they execute
 
 The ideation session is always the entry point. The Lore Package is always the handoff.
 

@@ -781,7 +781,7 @@ Consolidate everything that couldn't be inferred into a numbered list. Never sil
 
 ## Ideation-to-Code Bridge Workflow
 
-The ideation layer (limn skill) is where ideas get shaped into Lore Packages. The execution layer (this skill + lere skill) is where they get built. The handoff between them is the Lore Package artifact.
+The ideation layer (limn skill) is where ideas get shaped into Lore Packages. The execution layer (this skill + larn skill) is where they get built. The handoff between them is the Lore Package artifact.
 
 ```
 1. Design in the ideation layer (limn skill for guided sessions)

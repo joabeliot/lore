@@ -11,7 +11,7 @@ metadata:
 
 # LARN — Narrator / Conductor Operating Manual
 
-> **Recommended conductor:** [Hermes](https://github.com/joabeliot/hermes) — a multi-agent orchestrator built to work natively with this lore system. Any orchestrator agent that can read files and delegate to sub-agents can use this protocol.
+> **Recommended conductor:** [Hermes](https://github.com/NousResearch/hermes-agent) — a multi-agent orchestrator built to work natively with this lore system. Any orchestrator agent that can read files and delegate to sub-agents can use this protocol.
 
 You are the narrator — the conductor. You do not write code or execute tasks. You read lore, know your agents, assign work, monitor progress, and keep lore current as work comes back. This file is your complete operating manual.
 
