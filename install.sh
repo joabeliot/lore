@@ -6,18 +6,21 @@
 #   ./install.sh                    # Install CLI + Claude Code hooks (if Claude detected)
 #   ./install.sh --skill-dir <path> # Install a skill
 #   ./install.sh --claude           # (Re-)install Claude Code hooks and skill
+#   ./install.sh --verify           # Verify the Claude Code hook is correctly installed
 #
 # Flags:
 #   --skill-dir <path>  Install a specific skill (e.g., ~/.hermes/skills/lore)
 #   --skill <name>      Skill to install: lore (default), larn, limn, all
 #   --hooks <path>      Install git hooks into a project
 #   --claude            Wire lore into Claude Code (settings.json SessionStart hook + skill)
+#   --verify            Check that the Claude Code hook is present and correct (no writes)
 #   --help              Show this help
 #
 # Examples:
 #   curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | bash
 #   ./install.sh --skill-dir ~/.hermes/skills/lore --skill all
 #   ./install.sh --claude
+#   ./install.sh --verify
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOOKS_DIR="$SCRIPT_DIR/hooks"
@@ -26,6 +29,7 @@ SKILL_DIR=""
 SKILL_NAME="lore"
 PROJECT_DIR=""
 INSTALL_CLAUDE=false
+VERIFY_CLAUDE=false
 DID_SOMETHING=false
 
 usage() {
@@ -120,6 +124,68 @@ install_skill() {
     cp -r "$SCRIPT_DIR/skills/$skill_name/scripts/"* "$scripts_target/" 2>/dev/null || true
     echo "[lore] Skill scripts installed → $scripts_target/"
   fi
+}
+
+verify_claude() {
+  local settings="$HOME/.claude/settings.json"
+
+  if [ ! -f "$settings" ]; then
+    echo "[lore] ✗ $settings not found"
+    echo "[lore]   Fix: run  ./install.sh --claude"
+    return 1
+  fi
+
+  if ! command -v python3 &>/dev/null; then
+    echo "[lore] ✗ python3 not found — cannot verify"
+    return 1
+  fi
+
+  python3 - <<'PYEOF'
+import json, os, sys
+
+settings_path = os.path.expanduser("~/.claude/settings.json")
+
+try:
+    with open(settings_path) as f:
+        settings = json.load(f)
+except Exception as e:
+    print(f"[lore] ✗ Could not parse settings.json: {e}")
+    sys.exit(1)
+
+session_start = settings.get("hooks", {}).get("SessionStart", [])
+
+lore_entry = next(
+    (e for e in session_start
+     if any("lore/GUARDRAILS.md" in h.get("command", "")
+            for h in e.get("hooks", []))),
+    None,
+)
+
+if not lore_entry:
+    print("[lore] ✗ SessionStart hook NOT found in ~/.claude/settings.json")
+    print("[lore]   Fix: run  ./install.sh --claude")
+    sys.exit(1)
+
+cmd = (lore_entry.get("hooks") or [{}])[0].get("command", "")
+guardrails_ok = "lore/GUARDRAILS.md" in cmd
+context_ok    = "lore/CONTEXT.md"    in cmd
+matcher       = lore_entry.get("matcher", "")
+
+print("[lore] ✓ SessionStart hook found")
+print(f"[lore]   matcher  : {matcher or '(empty — fires on every session start)'}")
+print(f"[lore]   GUARDRAILS.md loaded : {'yes' if guardrails_ok else 'NO — hook may be incomplete'}")
+print(f"[lore]   CONTEXT.md loaded    : {'yes' if context_ok    else 'NO — hook may be incomplete'}")
+
+skill_path = os.path.expanduser("~/.claude/skills/lore/SKILL.md")
+if os.path.exists(skill_path):
+    print(f"[lore] ✓ Skill installed at {skill_path}")
+else:
+    print(f"[lore] ✗ Skill not found at {skill_path}")
+    print("[lore]   Fix: run  ./install.sh --claude")
+
+if not (guardrails_ok and context_ok):
+    sys.exit(1)
+PYEOF
 }
 
 install_hooks() {
@@ -230,6 +296,9 @@ PYEOF
     cp "$skill_source" "$claude_skill_dir/SKILL.md"
     echo "[lore] Skill installed → $claude_skill_dir/SKILL.md"
   fi
+
+  echo ""
+  verify_claude
 }
 
 # Parse flags
@@ -243,6 +312,8 @@ while [[ $# -gt 0 ]]; do
       PROJECT_DIR="$2"; shift 2 ;;
     --claude)
       INSTALL_CLAUDE=true; shift ;;
+    --verify)
+      VERIFY_CLAUDE=true; shift ;;
     --help|-h)
       usage ;;
     *)
@@ -250,6 +321,12 @@ while [[ $# -gt 0 ]]; do
       exit 1 ;;
   esac
 done
+
+# --verify: read-only check, exits immediately
+if [ "$VERIFY_CLAUDE" = true ]; then
+  verify_claude
+  exit $?
+fi
 
 # Default: install CLI, then auto-wire Claude Code if detected
 if [ -z "$SKILL_DIR" ] && [ -z "$PROJECT_DIR" ] && [ "$INSTALL_CLAUDE" = false ]; then
@@ -262,6 +339,11 @@ fi
 # Install requested components
 if [ "$INSTALL_CLAUDE" = true ]; then
   install_claude
+  DID_SOMETHING=true
+fi
+
+if [ "$VERIFY_CLAUDE" = true ]; then
+  verify_claude
   DID_SOMETHING=true
 fi
 
