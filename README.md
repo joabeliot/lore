@@ -5,6 +5,7 @@
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> •
+  <a href="#claude-code-setup">Claude Code Setup</a> •
   <a href="#how-it-works">How It Works</a> •
   <a href="#cli-commands">CLI Commands</a> •
   <a href="#skills">Skills</a> •
@@ -25,8 +26,11 @@ It's two things in one:
 ## Quick Start
 
 ```bash
-# Install the CLI
+# Install the CLI + wire into Claude Code automatically
 curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | bash
+
+# Confirm Claude Code is wired up
+./install.sh --verify
 
 # Create a project
 lore create project \
@@ -44,6 +48,55 @@ lore ticket start MYA-1 --agent claude
 lore inspect MYA-1   # Pre-PR gate
 lore ticket done MYA-1
 ```
+
+---
+
+## Claude Code Setup
+
+Lore is designed to work hands-free with Claude Code. The installer auto-detects Claude Code and wires everything in — no manual config.
+
+### What the installer does
+
+1. **Installs the `lore` CLI** binary to `~/.local/bin/lore`
+2. **Injects a `SessionStart` hook** into `~/.claude/settings.json` — Claude automatically reads `lore/GUARDRAILS.md` and the last 150 lines of `lore/CONTEXT.md` at the start of every session in any project that has a `lore/` folder
+3. **Installs the lore skill** to `~/.claude/skills/lore/SKILL.md` — teaches Claude how to use the lore system
+
+### Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | bash
+```
+
+### Verify
+
+After installing, confirm everything is wired correctly:
+
+```bash
+./install.sh --verify
+```
+
+Expected output:
+```
+[lore] ✓ SessionStart hook found
+[lore]   matcher  : startup|resume|clear|compact
+[lore]   GUARDRAILS.md loaded : yes
+[lore]   CONTEXT.md loaded    : yes
+[lore] ✓ Skill installed at ~/.claude/skills/lore/SKILL.md
+```
+
+If any line shows `✗`, the output tells you exactly which command to run to fix it.
+
+### Re-install or repair
+
+```bash
+./install.sh --claude
+```
+
+This is idempotent — safe to run multiple times. It skips anything already in place and re-verifies at the end.
+
+### How it works in practice
+
+Once wired, Claude Code reads your project's lore at the start of every session automatically. You don't need to tell it to — it just knows the project rules, current state, and what's in progress before you type your first message.
 
 ---
 
@@ -97,34 +150,45 @@ Lore ships with AI agent skills that teach your tools how to use the system:
 | **larn** | How to orchestrate agents — planning, delegation, build loops, inspect |
 | **limn** | How to ideate and package ideas into lore-ready form |
 
-Install skills with:
+Skills for Claude Code are installed automatically by the default installer. For other tools:
+
 ```bash
 ./install.sh --skill-dir ~/.hermes/skills/lore       # For Hermes
-./install.sh --skill-dir ~/.claude/skills/lore        # For Claude Code
+./install.sh --skill-dir ~/.claude/skills/lore        # For Claude Code (manual)
 ```
 
 ---
 
 ## Installation
 
-### Via curl (recommended)
+### Via curl — recommended, does everything in one shot
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/joabeliot/lore/main/install.sh | bash
 ```
 
-### Via install.sh
+Installs the CLI, wires the Claude Code hook, and copies the skill. Run `./install.sh --verify` after to confirm.
+
+### Flags
+
+| Flag | What it does |
+|---|---|
+| *(none)* | Install CLI + auto-wire Claude Code if detected |
+| `--claude` | (Re-)install Claude Code hook and skill only |
+| `--verify` | Check that the Claude Code hook is correctly installed — no writes |
+| `--skill-dir <path>` | Install a skill to a custom directory |
+| `--skill <name>` | Which skill to install: `lore` (default), `larn`, `limn`, `all` |
+| `--hooks <path>` | Install git hooks into a project directory |
+
+### From source
+
 ```bash
 git clone https://github.com/joabeliot/lore.git
 cd lore
-./install.sh [--skill-dir <path>] [--hooks <project-path>]
+./install.sh
 ```
 
-### From source
-```bash
-# Requires Rust
-cargo build --release
-cp target/release/lore ~/.local/bin/lore
-```
+Requires Rust if no pre-built binary is available for your platform. See [rustup.rs](https://rustup.rs).
 
 ---
 
