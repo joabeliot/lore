@@ -1,0 +1,309 @@
+{
+  "shorthand": "LOR",
+  "tickets": [
+    {
+      "id": "LOR-1",
+      "name": "Slice 0: test harness + fix dashboard bind, atomic/locked ticket writes, run_cmd pipe hang",
+      "description": "Hermetic test harness (temp HOME). Fix F9 (bind 127.0.0.1), F4 (atomic write + fs2 lock), F8 (drain pipes while waiting, kill process group). Tests first.",
+      "context": [
+        "decisions/conductor-and-gates.md"
+      ],
+      "plan": null,
+      "status": "todo",
+      "priority": "P1",
+      "tags": [
+        "tests",
+        "safety"
+      ],
+      "source": "Agent",
+      "created": "2026-10-08",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-08T10:44:35.557041+00:00",
+          "event": "created",
+          "detail": "LOR-1"
+        }
+      ]
+    },
+    {
+      "id": "LOR-2",
+      "name": "Slice 1: append-only event log + archive-on-close",
+      "description": "D4/D5: ~/.lore/events.jsonl, one line per mutating command; session log takes --ticket; session close archives.",
+      "context": [
+        "decisions/conductor-and-gates.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P1",
+      "tags": [
+        "events"
+      ],
+      "source": "Agent",
+      "created": "2026-10-08",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-08T10:44:35.563326+00:00",
+          "event": "created",
+          "detail": "LOR-2"
+        }
+      ]
+    },
+    {
+      "id": "LOR-3",
+      "name": "Slice 2: ticket schema, transition(), gated done",
+      "description": "D1/D2: verify/manual/protect/attempts fields (serde default); one transition fn; done needs green inspect record, same HEAD, protected hash, independent review; edit --status cannot set done.",
+      "context": [
+        "decisions/conductor-and-gates.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P1",
+      "tags": [
+        "gates"
+      ],
+      "source": "Agent",
+      "created": "2026-10-08",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-08T10:44:35.567976+00:00",
+          "event": "created",
+          "detail": "LOR-3"
+        }
+      ]
+    },
+    {
+      "id": "LOR-4",
+      "name": "Slice 3: inspect runs verify steps, records results, Flutter/Wrangler detection",
+      "description": "D1: inspect writes lore/workspace/inspect/<ticket>/<n>.json; detect pubspec.yaml and wrangler.toml; dirty tree policy.",
+      "context": [
+        "decisions/conductor-and-gates.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P1",
+      "tags": [
+        "inspect"
+      ],
+      "source": "Agent",
+      "created": "2026-10-08",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-08T10:44:35.572705+00:00",
+          "event": "created",
+          "detail": "LOR-4"
+        }
+      ]
+    },
+    {
+      "id": "LOR-5",
+      "name": "Slice 4: lore conductor (next/run/status/stop/resume/approve)",
+      "description": "D6: worktree per ticket, worker adapters from config.yml, timeouts with process-group kill, attempt caps, reviewer != author, STOP file, manual items park the ticket. Fake workers first.",
+      "context": [
+        "decisions/conductor-and-gates.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P1",
+      "tags": [
+        "conductor"
+      ],
+      "source": "Agent",
+      "created": "2026-10-08",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-08T10:44:35.577386+00:00",
+          "event": "created",
+          "detail": "LOR-5"
+        }
+      ]
+    },
+    {
+      "id": "LOR-6",
+      "name": "Slice 5: dashboard board, live feed, ticket detail, alerts, STOP/approve",
+      "description": "D7: /api/events and /api/runs, read-only except STOP and approve-manual.",
+      "context": [
+        "decisions/conductor-and-gates.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P2",
+      "tags": [
+        "dashboard"
+      ],
+      "source": "Agent",
+      "created": "2026-10-08",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-08T10:44:35.581934+00:00",
+          "event": "created",
+          "detail": "LOR-6"
+        }
+      ]
+    },
+    {
+      "id": "LOR-7",
+      "name": "Audit backlog: destructive bugs, cross-machine, docs/tool drift, design gaps",
+      "description": "Field audit of lore from real use. Triage into separate tickets before building.\n\nDESTRUCTIVE BUGS (fix first)\n- `lore delete project` deletes the whole lore/ folder with no prompt; docs say project files are kept.\n- Re-running `lore create project` on an existing project silently empties the ticket list.\n- Parallel ticket writes are unsafe despite docs: 20 parallel adds produced 19 tickets. (overlaps F4 / LOR-1)\n\nCROSS-MACHINE / TEAMMATES\n- config.yml is committed but holds a session ID that exists only on the creating machine; any other clone fails with \"No session found\".\n- `lore session attach` (documented fix) creates a session with a blank ticket prefix and rewrites the committed config, so every machine dirties it.\n- Guardrails capture machine-specific facts as project rules (e.g. \"switch to jb-sio\" GitHub rule is wrong where accounts differ).\n\nDOCS VS TOOL\n- Most ticket commands fail as documented: `ticket done EPA-1` needs a session arg first; so do session status, recall, inspect.\n- `install.sh --hooks` copies a file not in the repo, so the \"hook-generated\" CHANGELOG.md never exists.\n- No published releases, so `curl | bash` install cannot work; every install needs Rust.\n- `lore update` does nothing.\n- `lore inspect` only knows Rust and Node; on Flutter it skips the build check and passes. (overlaps F1)\n\nDESIGN GAPS\n- No staleness detection (main one). Lore relies on the agent remembering to update at session end; that fails. The CLI never reads CONTEXT.md or feature files.\n- Session-start hook loads the wrong slice: last 150 lines of CONTEXT.md, so the Focus/Phase/Open/Next header gets cut off as the log grows. Never loads INDEX.md though the skill calls it Tier 1.\n- No nested/monorepo support: hook only looks in cwd. Sessions starting in stablish/ get the workspace lore, never the app's lore.\n- lore/sessions/ is written by a private hook not in the repo: assistant side only, entries cut mid-sentence, ~60% noise, no rollup.\n- No import path for existing docs (TODOS.md, spec files), so they stay shadow documentation.",
+      "context": [
+        "decisions/conductor-and-gates.md",
+        "decisions/project-profiles.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P1",
+      "tags": [
+        "audit",
+        "bugs",
+        "docs",
+        "design"
+      ],
+      "source": "Human",
+      "created": "2026-10-09",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-09T14:57:57.905434+00:00",
+          "event": "created",
+          "detail": "LOR-7"
+        },
+        {
+          "at": "2026-10-09T16:48:55.680091+00:00",
+          "event": "context_added",
+          "detail": "decisions/project-profiles.md"
+        }
+      ]
+    },
+    {
+      "id": "LOR-8",
+      "name": "Project profiles 8a: SKILL.md + README spec (shared core, backend/frontend, front matter)",
+      "description": "PROBLEM\nEvery project gets the same lore/ structure regardless of type. An audit of a real Flutter app (~134k lines) showed where that fails:\n- architecture/ assumes a backend (models, apis). A mobile/web client has no place for navigation, state management, environments, design system or platform setup. All three architecture files stayed empty stubs.\n- Nothing links a lore file to the code it describes, so an agent cannot tell which lore to load for the folder it is editing, and nothing can detect staleness. Lore claims were wrong about code changed days earlier.\n- CONTEXT.md holds both the current-state header and an ever-growing log. The session-start hook loads the last 150 lines, so the header eventually gets cut off.\n- Business rules, API contracts, release/deploy knowledge and machine-specific notes have no folder. They ended up in the repo root, raw session logs, or nowhere. A machine-specific rule (\"switch to GitHub account X\") was committed as a project guardrail and was wrong on a second machine.\n- ~20 spec/handoff docs lived outside lore and INDEX.md pointed to none of them.\n\nPROPOSAL\nReplace the single structure with a shared core plus two profiles (backend, frontend), chosen at init: `lore create project --profile backend|frontend`. A project only gets the folders its profile needs, so small projects are not left with empty stubs.\n\nSHARED CORE (both profiles)\nlore/\n  INDEX.md             TOC and loading guide\n  GUARDRAILS.md        project rules true on every machine\n  STATE.md             current Focus / Phase / Open / Next only (replaces CONTEXT.md header)\n  log/YYYY-MM.md       dated session entries, one file per month (replaces CONTEXT.md log)\n  sessions/            raw auto-captured logs; never auto-loaded\n  local/               untracked (gitignored): this machine's accounts, paths, resource limits\n  domain/glossary.md   product terms\n  domain/rules/<rule>.md   business rules, one per file\n  features/<area>/<flow>.md\n  decisions/NNNN-<slug>.md   numbered decision records\n  testing/registry.md\n  references.md        pointers to docs that live outside lore/\n  workspace/ticket.json\n  OG.md, MISSION.md    human-only, unchanged\n\nBACKEND PROFILE ADDS\n  architecture/overview.md (services, data flow, infra)\n  architecture/services/<name>.md (one per service or app module)\n  architecture/data/models.md (schemas, relationships, constraints)\n  architecture/data/migrations.md (order, gotchas, irreversible steps)\n  architecture/jobs.md (queues, scheduled tasks, workers)\n  architecture/security.md (auth, permissions, where secrets live; never values)\n  apis/<surface>.md (endpoints exposed, per surface or version)\n  contracts/consumers/<client>.md (who calls this backend, what they depend on)\n  contracts/upstream/<service>.md (third-party/internal services this backend calls)\n  ops/environments.md (hosts, config keys per env; names only)\n  ops/deploy.md (how a deploy happens, order across services)\n  ops/runbooks/<task>.md\n  ops/incidents/YYYY-MM-DD-<slug>.md\n  ops/observability.md (dashboards, alerts, logs)\n\nFRONTEND PROFILE ADDS (mobile and web)\n  architecture/overview.md (layers, state mgmt, DI)\n  architecture/modules/<area>.md (one per code area, mirrors source tree)\n  architecture/navigation.md (routes, gates, deep links)\n  architecture/state.md (where state lives, caching, persistence)\n  architecture/environments.md (hosts, env keys, build flavours; names only)\n  design/system.md (colours, type, spacing, component rules)\n  design/copy.md (voice and wording rules)\n  contracts/<service>.md (each backend/third-party API consumed; status: requested / agreed / deployed / verified)\n  platform/ios.md, android.md, web.md (permissions, entitlements, store setup, gotchas)\n  analytics.md (events, meaning, destinations)\n  ops/release.md (how a build is cut, version/build-number rules, release history)\n  ops/runbooks/<task>.md\n\nCODE-LINKED FRONT MATTER\nEvery file under features/, architecture/modules/ or architecture/services/, apis/, and contracts/ starts with:\n---\npaths: [lib/presentation/home/stewardship/**]\ntests: [test/presentation/worth_it_*]\nverified_at: <commit hash>\n---\nThis lets the session hook load the right lore file for the folder being edited, and lets a future `lore doctor` flag files whose paths changed since verified_at and code areas no lore file covers.\n\nACCEPTANCE CRITERIA\n- skills/lore/SKILL.md documents the shared core, both profiles, the front matter, and a file contract (audience, purpose, template) for each new file type.\n- `lore create project` accepts a profile and scaffolds only that profile's folders, with honest stubs (no invented content).\n- `lore/local/` is added to the project's .gitignore at init.\n- Session-start hook loads INDEX.md, GUARDRAILS.md, STATE.md and the most recent log entries, in place of the tail of CONTEXT.md.\n- Migration path for existing projects: split CONTEXT.md into STATE.md and log/; move architecture/models.md and apis.md to their new locations. Existing content preserved.\n- README project-structure section updated to match.\n\nOUT OF SCOPE (separate tickets if useful)\n- The `lore doctor` staleness command itself.\n- Monorepo/workspace support (parent lore indexing child lores).\n- Fixes to existing CLI bugs (see LOR-7).\n\nNOTES FOR WHOEVER PICKS THIS UP\n- Changes the canonical lore/ structure, so GUARDRAILS.md (\"no subdirs outside canonical structure\") and lore's own CLAUDE.md/INDEX.md (which reference CONTEXT.md) must be updated with it; lore's own lore/ is the first migration test case.\n- Migration must be backward compatible; do not break projects still on CONTEXT.md.\n- Related: LOR-7 (staleness, hook slice, monorepo, cross-machine gaps).",
+      "context": [
+        "decisions/project-profiles.md"
+      ],
+      "plan": null,
+      "status": "inprogress",
+      "priority": "P2",
+      "tags": [
+        "structure",
+        "profiles",
+        "skill",
+        "hook",
+        "migration"
+      ],
+      "source": "Human",
+      "created": "2026-10-09",
+      "assigned_to": "claude",
+      "started_at": "2026-10-09",
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-09T15:00:44.166744+00:00",
+          "event": "created",
+          "detail": "LOR-8"
+        },
+        {
+          "at": "2026-10-09T15:13:53.680461+00:00",
+          "event": "scheduled",
+          "detail": null
+        },
+        {
+          "at": "2026-10-09T15:13:53.686157+00:00",
+          "event": "started",
+          "detail": "claude"
+        },
+        {
+          "at": "2026-10-09T16:48:55.663863+00:00",
+          "event": "context_added",
+          "detail": "decisions/project-profiles.md"
+        }
+      ]
+    },
+    {
+      "id": "LOR-9",
+      "name": "Project profiles 8b: --profile scaffolding, lore/local gitignore, CONTEXT.md migration",
+      "description": "Split from LOR-8. Implements what 8a specifies: 'lore create project --profile backend|frontend' scaffolds only that profile's folders with honest stubs; add lore/local/ to project .gitignore at init; migration for existing projects (CONTEXT.md -> STATE.md + log/YYYY-MM.md, architecture/models.md + apis.md -> new locations, content preserved, idempotent, backward compatible). Tests first, hermetic (temp HOME). Depends on LOR-8.",
+      "context": [
+        "decisions/project-profiles.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P2",
+      "tags": [
+        "structure",
+        "profiles",
+        "cli",
+        "migration"
+      ],
+      "source": "Agent",
+      "created": "2026-10-09",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-09T15:13:53.667990+00:00",
+          "event": "created",
+          "detail": "LOR-9"
+        },
+        {
+          "at": "2026-10-09T16:48:55.669801+00:00",
+          "event": "context_added",
+          "detail": "decisions/project-profiles.md"
+        }
+      ]
+    },
+    {
+      "id": "LOR-10",
+      "name": "Project profiles 8c: session-start hook loads INDEX + GUARDRAILS + STATE + recent log",
+      "description": "Split from LOR-8. Hook lives in ~/.claude/settings.json (not in this repo), so do with JB. Replace 'last 150 lines of CONTEXT.md' with INDEX.md, GUARDRAILS.md, STATE.md and the most recent log/YYYY-MM.md entries; fall back to CONTEXT.md for legacy projects. Later: use front-matter paths to load the lore file matching the folder being edited. Depends on LOR-8. Related: LOR-7.",
+      "context": [
+        "decisions/project-profiles.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P2",
+      "tags": [
+        "hook",
+        "profiles"
+      ],
+      "source": "Agent",
+      "created": "2026-10-09",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-09T15:13:53.673984+00:00",
+          "event": "created",
+          "detail": "LOR-10"
+        },
+        {
+          "at": "2026-10-09T16:48:55.675020+00:00",
+          "event": "context_added",
+          "detail": "decisions/project-profiles.md"
+        }
+      ]
+    }
+  ],
+  "counter": 11
+}

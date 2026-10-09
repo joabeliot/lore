@@ -1,0 +1,6 @@
+project: lore
+session: 514ee393-b9c3-4b02-a4ba-c852c42dea0b
+description: Rust CLI for project memory, sessions and tickets for AI-assisted development; adding conductor, enforced gates and a dashboard
+working_dir: /Users/joabeliot/projects/personal/lore
+lore_dir: /Users/joabeliot/projects/personal/lore/lore
+ticket: /Users/joabeliot/projects/personal/lore/lore/workspace/ticket.json

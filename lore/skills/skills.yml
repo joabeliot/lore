@@ -1,0 +1,4 @@
+skills:
+  - name: lore
+    source: https://github.com/joabeliot/lore
+    notes: this repo ships the skill in skills/lore/SKILL.md
