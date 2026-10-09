@@ -29,3 +29,20 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 
 ---
 
+## 2026-10-09 22:26 — 0de755b — feat: lore takeme shell function, session/ticket command updates, session logs
+
+Commits JB's previously uncommitted work: install_shell_function in
+install.sh, src/commands.rs and src/main.rs changes, root sessions/ logs,
+refreshed lore/CHANGELOG.md and lore/sessions.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+---
+
+## 2026-10-09 22:26 — f9c2bc9 — Merge origin/main into enhancements
+
+# Conflicts:
+#	install.sh
+
+---
+
