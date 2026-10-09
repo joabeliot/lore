@@ -172,60 +172,6 @@ pub fn cmd_recall(input: &str, json_output: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-// ─── takeme ─────────────────────────────────────────────────────────────────
-
-pub fn cmd_takeme(input: Option<&str>) -> anyhow::Result<()> {
-    ensure_global_dirs()?;
-    let sessions = load_all_sessions()?;
-
-    let Some(input) = input else {
-        if sessions.is_empty() {
-            println!("No sessions found.");
-            return Ok(());
-        }
-        let mut sorted: Vec<_> = sessions.values().collect();
-        sorted.sort_by(|a, b| a.shorthand.cmp(&b.shorthand));
-        let max_short = sorted.iter().map(|s| s.shorthand.len()).max().unwrap_or(0).max("shorthand".len());
-        let max_name  = sorted.iter().map(|s| s.project.len()).max().unwrap_or(0).max("project".len());
-        println!("Sessions:\n");
-        println!("  {:<width_s$}  {:<width_n$}  prefix", "shorthand", "project", width_s = max_short, width_n = max_name);
-        println!("  {}  {}  --------", "-".repeat(max_short), "-".repeat(max_name));
-        for s in sorted {
-            println!("  {:<width_s$}  {:<width_n$}  {}", s.shorthand, s.project, &s.uid[..8], width_s = max_short, width_n = max_name);
-        }
-        return Ok(());
-    };
-
-    // Try UUID prefix first, then fall back to shorthand (case-insensitive)
-    let uid = if let Ok(uid) = find_session(&sessions, input) {
-        uid
-    } else {
-        let input_lower = input.to_lowercase();
-        let matches: Vec<&String> = sessions
-            .values()
-            .filter(|s| s.shorthand.to_lowercase() == input_lower || s.project.to_lowercase() == input_lower)
-            .map(|s| &s.uid)
-            .collect();
-
-        match matches.len() {
-            0 => anyhow::bail!("No session found matching '{}'", input),
-            1 => matches[0].clone(),
-            _ => {
-                let mut msg = format!("Multiple sessions match '{}'. Use a UUID prefix to be specific:", input);
-                for uid in &matches {
-                    let s = &sessions[*uid];
-                    msg.push_str(&format!("\n  {}  {} [{}]", &uid[..8], s.project, s.shorthand));
-                }
-                anyhow::bail!(msg);
-            }
-        }
-    };
-
-    let session = &sessions[&uid];
-    println!("{}", session.working_dir);
-    Ok(())
-}
-
 // ─── list projects ──────────────────────────────────────────────────────────
 
 pub fn cmd_list_projects() -> anyhow::Result<()> {
