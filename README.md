@@ -194,21 +194,39 @@ Requires Rust if no pre-built binary is available for your platform. See [rustup
 
 ## Project Structure
 
+Every project gets a shared core. A **profile** (`backend` or `frontend`) adds the folders that kind of project needs, so small projects aren't left with empty stubs.
+
+> **Status:** the shared core and profiles are specified in `skills/lore/SKILL.md` (LOR-8). `lore create project` still scaffolds the legacy layout until `--profile` lands (LOR-9).
+
 ```
 project/
 ├── lore/
-│   ├── config.yml              ← Project config (references session)
-│   ├── workspace/
-│   │   └── ticket.json         ← All tickets as structured JSON
-│   ├── features/               ← Feature descriptions
-│   ├── architecture/           ← System design docs
-│   ├── decisions/              ← Architecture Decision Records
-│   ├── testing/                ← Test coverage registry
-│   ├── INDEX.md                ← TOC for AI agents
-│   ├── GUARDRAILS.md           ← Project rules
-│   └── CONTEXT.md              ← Current state + session log
-└── CLAUDE.md or AGENTS.md      ← AI entry point
+│   ├── INDEX.md              ← TOC + loading guide
+│   ├── GUARDRAILS.md         ← Rules true on every machine
+│   ├── STATE.md              ← Current Focus / Phase / Open / Next
+│   ├── log/YYYY-MM.md        ← Session log, one file per month
+│   ├── sessions/             ← Raw auto-captured logs (never auto-loaded)
+│   ├── local/                ← This machine only (gitignored)
+│   ├── domain/               ← glossary.md + rules/<rule>.md
+│   ├── features/<area>/      ← One file per flow (code-linked)
+│   ├── decisions/NNNN-slug.md
+│   ├── testing/registry.md
+│   ├── references.md         ← Pointers to docs outside lore/
+│   ├── workspace/ticket.json ← Tickets (managed by the CLI)
+│   ├── config.yml            ← Project config (references session)
+│   ├── OG.md, MISSION.md     ← Human-only
+│   └── …profile folders (below)
+└── CLAUDE.md or AGENTS.md    ← AI entry point
 ```
+
+| Profile | Adds |
+|---|---|
+| **backend** | `architecture/` (overview, services, data/models, data/migrations, jobs, security), `apis/`, `contracts/consumers/` + `contracts/upstream/`, `ops/` (environments, deploy, runbooks, incidents, observability) |
+| **frontend** | `architecture/` (overview, modules, navigation, state, environments), `design/` (system, copy), `contracts/<service>.md`, `platform/` (ios, android, web), `analytics.md`, `ops/` (release, runbooks) |
+
+Files under `features/`, `architecture/modules|services/`, `apis/` and `contracts/` start with front matter (`paths`, `tests`, `verified_at`) linking them to the code they describe. That lets agents load the right file for the folder being edited and lets staleness be detected.
+
+Existing projects on `CONTEXT.md` keep working; see *Migrating a legacy lore* in the skill.
 
 ---
 

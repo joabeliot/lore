@@ -1,6 +1,6 @@
 ---
 name: lore
-description: Initialize, update, and maintain the lore project memory system. Use this skill whenever the user mentions init lore, set up project memory, generate lore from an existing repo, update CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say "lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
+description: Initialize, update, and maintain the lore project memory system. Use this skill whenever the user mentions init lore, set up project memory, generate lore from an existing repo, update STATE.md or CONTEXT.md, log a decision, add a feature file, or bridge ideas from Claude Web into Claude Code. Trigger even if the user doesn't say "lore" explicitly — if they're trying to capture project state, decisions, architecture, or current focus for AI context, this skill applies.
 version: 3.0.0
 author: Joab Eliot
 license: MIT
@@ -31,33 +31,88 @@ Think of `lore` as the interface between humans and the codebase. Code tells you
 
 ## Folder Structure
 
+> **Status — profiles are the target structure.** This section describes the shared core plus the `backend` / `frontend` profiles (LOR-8). `lore create project` does **not** scaffold them yet (tracked in LOR-9); until it does, new projects get the **legacy structure** in the box below, and agents create profile folders by hand. Existing projects keep working: if `STATE.md` is absent, treat the `CONTEXT.md` header as the state and the `CONTEXT.md` log as the log. Migration is described under *Migrating a legacy lore*.
+
+### Shared core (every project)
+
 ```
 project/
   CLAUDE.md                  ← AI session entry point (always loaded)
   lore/
-    INDEX.md                 ← Tier 1: TOC + loading guide (always loaded)
-    GUARDRAILS.md            ← Tier 1: project rules (always loaded)
-    CONTEXT.md               ← Tier 1: current state + session log (always loaded)
+    INDEX.md                 ← Tier 1: TOC + loading guide
+    GUARDRAILS.md            ← Tier 1: rules true on every machine
+    STATE.md                 ← Tier 1: current Focus / Phase / Open / Next only
+    log/YYYY-MM.md           ← Tier 1 (latest entries): dated session entries, one file per month
+    sessions/                ← Raw auto-captured session logs. Never auto-loaded
+    local/                   ← Untracked (gitignored): this machine's accounts, paths, limits
+    domain/
+      glossary.md            ← Product terms and what they mean
+      rules/<rule>.md        ← Business rules, one per file
+    features/<area>/<flow>.md  ← One file per flow (code-linked)
+    ideas/                   ← Pre-feature captures (unvalidated)
+    decisions/NNNN-<slug>.md ← Numbered decision records
+    testing/registry.md      ← What's covered, what's not
+    references.md            ← Pointers to docs that live outside lore/
+    bullpen/<agent>/identity.md  ← Agent roster (see Bullpen)
+    skills/                  ← custom/ + skills.yml
+    workspace/ticket.json    ← CLI-managed ticket state (never edit directly)
     OG.md                    ← 🔒 Human-only: raw dev journal
     MISSION.md               ← 🔒 Human-only: project soul
     CHANGELOG.md             ← Hook-generated: git commit history
-    workspace/
-      ticket.json            ← CLI-managed ticket state (never edit directly)
+```
+
+### Backend profile adds
+
+```
     architecture/
-      overview.md            ← Service map, data flow, infra topology
-      models.md              ← Data models and schemas
-      apis.md                ← API contracts and external services
-    features/                ← One .md per feature
-    ideas/                   ← Pre-feature captures (unvalidated)
-    testing/
-      registry.md            ← What's covered, what's not
-    decisions/               ← Architecture Decision Records (one per decision)
-    bullpen/                 ← One folder per agent — identity + role in this project
-      [agent-name]/
-        identity.md          ← What this agent does here, strengths, task fit
-    skills/
-      custom/                ← Project-specific Claude skills
-      skills.yml             ← Skill registry
+      overview.md            ← Services, data flow, infrastructure
+      services/<name>.md     ← One per service or app module (code-linked)
+      data/models.md         ← Schemas, relationships, constraints
+      data/migrations.md     ← Migration order, gotchas, irreversible steps
+      jobs.md                ← Queues, scheduled tasks, background workers
+      security.md            ← Auth, permissions, where secrets live (never the values)
+    apis/<surface>.md        ← Endpoints this project exposes, per surface or version (code-linked)
+    contracts/
+      consumers/<client>.md  ← Who calls this backend and what they depend on (code-linked)
+      upstream/<service>.md  ← Third-party and internal services this backend calls (code-linked)
+    ops/
+      environments.md        ← Hosts and config keys per environment (names only)
+      deploy.md              ← How a deploy happens, order across services
+      runbooks/<task>.md
+      incidents/YYYY-MM-DD-<slug>.md
+      observability.md       ← Dashboards, alerts, logs
+```
+
+### Frontend profile adds (mobile and web)
+
+```
+    architecture/
+      overview.md            ← Layers, state management, dependency injection
+      modules/<area>.md      ← One per code area, mirroring the source tree (code-linked)
+      navigation.md          ← Routes, gates, deep links
+      state.md               ← Where state lives, caching, persistence
+      environments.md        ← Hosts, env keys, build flavours (names only)
+    design/
+      system.md              ← Colours, type, spacing, component rules
+      copy.md                ← Voice and wording rules
+    contracts/<service>.md   ← Each backend/third-party API the app consumes (code-linked)
+    platform/
+      ios.md, android.md, web.md  ← Permissions, entitlements, store setup, gotchas
+    analytics.md             ← Events, what they mean, where they go
+    ops/
+      release.md             ← How a build is cut, version rules, release history
+      runbooks/<task>.md
+```
+
+A project gets **only** its profile's folders. Do not scaffold a folder just to leave it empty — create it when there is something true to put in it. A web app that is also a thin backend picks the profile that matches most of its code and adds individual files from the other by hand (log it under `Proposed Additions`).
+
+### Legacy structure (what `lore create project` scaffolds today)
+
+```
+    INDEX.md  GUARDRAILS.md  CONTEXT.md  OG.md  MISSION.md  CHANGELOG.md
+    workspace/ticket.json
+    architecture/{overview,models,apis}.md
+    features/  ideas/  decisions/  testing/registry.md  bullpen/  skills/
 ```
 
 ---
@@ -68,12 +123,16 @@ Not everything loads every session. This keeps token cost low and context releva
 
 | Tier | Files | When |
 |---|---|---|
-| **1 — Always** | `INDEX.md`, `GUARDRAILS.md`, `CONTEXT.md` | Every session via CLAUDE.md hook |
-| **2 — On-Demand** | `architecture/`, `features/`, `testing/`, `decisions/`, `bullpen/` | Load only what the task requires |
+| **1 — Always** | `INDEX.md`, `GUARDRAILS.md`, `STATE.md`, latest `log/` entries | Every session via the session-start hook |
+| **2 — On-Demand** | `architecture/`, `apis/`, `contracts/`, `domain/`, `features/`, `design/`, `platform/`, `ops/`, `testing/`, `decisions/`, `bullpen/` | Load only what the task requires |
 | **CLI-managed** | `workspace/ticket.json` | Never read directly — use `lore ticket list` / `lore session status` |
-| **Never Auto** | `OG.md`, `MISSION.md`, `CHANGELOG.md` | Human or agent pulls explicitly |
+| **Never Auto** | `OG.md`, `MISSION.md`, `CHANGELOG.md`, `sessions/`, `local/` | Human or agent pulls explicitly |
 
-**Rule:** Start every session reading Tier 1 only. Load Tier 2 files when the task requires them — name which files you loaded in your session log entry.
+**Rule:** Start every session reading Tier 1 only. Load Tier 2 files when the task requires them — name which files you loaded in your log entry.
+
+**Code-linked loading:** files with `paths:` front matter (see *Code-Linked Front Matter*) are loaded by matching the folder you are editing against their `paths`, instead of guessing from filenames.
+
+**Legacy projects:** with no `STATE.md`, Tier 1 is `INDEX.md`, `GUARDRAILS.md` and the **whole header block** of `CONTEXT.md` (Focus/Phase/Open/Next) plus its latest entries. Never load the tail of `CONTEXT.md` alone: the header is at the top and gets cut off as the log grows.
 
 ---
 
@@ -82,8 +141,9 @@ Not everything loads every session. This keeps token cost low and context releva
 A concrete sequence for any agent operating in a project with `lore`. Follow this every session, no exceptions.
 
 ### Starting a session
-1. Read `lore/INDEX.md` → `lore/GUARDRAILS.md` → `lore/CONTEXT.md` (Tier 1)
-2. Note the **Focus**, **Phase**, **Open**, and **Next** fields from CONTEXT.md — this is your briefing
+1. Read `lore/INDEX.md` → `lore/GUARDRAILS.md` → `lore/STATE.md` → latest `lore/log/` entries (Tier 1). Legacy project: `CONTEXT.md` instead of the last two.
+2. Note the **Focus**, **Phase**, **Open**, and **Next** fields from STATE.md — this is your briefing
+2a. Read `lore/local/` if it exists — this machine's accounts, paths and limits. It is never committed.
 3. If picking up a task: run `lore session status` + `lore ticket list --status todo`
 4. Load Tier 2 files only as the task requires — announce which ones you load
 
@@ -95,10 +155,10 @@ A concrete sequence for any agent operating in a project with `lore`. Follow thi
 
 ### Ending a session
 Do all of the following before closing:
-1. **Rewrite `CONTEXT.md` header** — Focus, Phase, Open, Next must reflect current state
-2. **Append a log entry** — compact, 3-5 lines (see CONTEXT.md contract for format)
+1. **Rewrite `STATE.md`** — Focus, Phase, Open, Next must reflect current state (legacy: the `CONTEXT.md` header)
+2. **Append a log entry** to this month's `log/YYYY-MM.md` — compact, 3-5 lines (see the `log/` contract; legacy: append to the `CONTEXT.md` log)
 3. **Close tickets** — `lore ticket done <ID>` for each completed ticket; `lore ticket add` for new ones discovered
-4. **Update feature files** for anything that started, changed, or completed
+4. **Update feature files** for anything that started, changed, or completed. If you touched code under a lore file's `paths`, re-verify that file and bump its `verified_at`
 5. **Update `testing/registry.md`** if tests were added or removed
 6. **Write decision files** for any significant architectural choices made this session
 
@@ -121,12 +181,14 @@ Each file has a defined audience, purpose, and update rhythm.
 ```markdown
 # lore Index
 
-**Always load:** `GUARDRAILS.md`, `CONTEXT.md`
+**Always load:** `GUARDRAILS.md`, `STATE.md`, latest `log/` entries
 
 ## Tier 2 — Load When Relevant
 | File / Dir | Load when |
 |---|---|
 | `architecture/` | Making structural or data model changes |
+| `domain/` | Touching business rules or product terms |
+| `references.md` | You need a spec that lives outside lore/ |
 | `features/[name].md` | Working on that specific feature |
 | `testing/registry.md` | Writing or reviewing tests |
 | `decisions/` | Making or revisiting a significant decision |
@@ -134,7 +196,8 @@ Each file has a defined audience, purpose, and update rhythm.
 ## Human-Only (Never auto-load)
 `OG.md` — raw dev journal  
 `MISSION.md` — project soul  
-`CHANGELOG.md` — git history (hook-generated)
+`CHANGELOG.md` — git history (hook-generated)  
+`sessions/` — raw session logs; `local/` — this machine only
 
 ## Proposed Additions
 Agent-suggested lore expansions pending human review. If approved, they become canonical.
@@ -146,7 +209,8 @@ Agent-suggested lore expansions pending human review. If approved, they become c
 ### `GUARDRAILS.md`
 **Audience:** Claude Code + developers — always loaded.
 **Purpose:** Project-wide rules. What to always do, never do, and how conventions work here.
-**Rule:** The most read file after CONTEXT.md. Keep it honest and current. Split by domain if needed.
+**Rule:** The most read file after STATE.md. Keep it honest and current. Split by domain if needed.
+**Machine-specific facts do not belong here.** Accounts, local paths, resource limits and "switch to GitHub account X" go in `local/` (gitignored). A guardrail must be true on every clone; one that is only true on your laptop is wrong for everyone else.
 
 **Template:**
 ```markdown
@@ -170,38 +234,46 @@ Agent-suggested lore expansions pending human review. If approved, they become c
 
 ---
 
-### `CONTEXT.md`
+### `STATE.md`
 **Audience:** Claude Code — always loaded.
-**Purpose:** Dense current state + chronological session log. This is how any agent picks up where the last one left off without re-reading the whole codebase.
-**Rule:** The header block is rewritten each session. Log entries are appended, never deleted. Keep entries compact — 3-5 lines max.
+**Purpose:** Current state only. How any agent picks up where the last one left off without re-reading the codebase.
+**Rule:** Rewritten every session, never appended to. Under 20 lines. History goes to `log/`, not here. Because it holds no log, it can never be cut off by a tail-based loader.
 
 **Template:**
 ```markdown
-# Context
+# State
 
 **Focus:** [what's actively being built — one line]
 **Phase:** [Alpha / Beta / Prod / R&D]
 **Open:** [open thread], [open thread]
 **Next:** [next task], [next task]
+```
+
+*Legacy:* projects without `STATE.md` keep this header at the top of `CONTEXT.md`. See *Migrating a legacy lore*.
 
 ---
 
-## Log
+### `log/YYYY-MM.md`
+**Audience:** Claude Code + humans — latest entries loaded every session; older months on demand.
+**Purpose:** Chronological session log, one file per calendar month so no single file grows without bound.
+**Rule:** Append-only. Never delete or rewrite old entries. Create the month's file on the first entry. Keep entries compact — 3-5 lines.
+
+**Template:**
+```markdown
+# Log — YYYY-MM
 
 ### YYYY-MM-DD — [Dev Name]
 [2-3 sentence summary of what was asked, what was done, and what the state is now]
-Loaded: `architecture/models.md`, `features/auth.md`
+Loaded: `architecture/data/models.md`, `features/auth/login.md`
 Left open: [unresolved threads]
 Carry forward: [what the ideation layer should be re-briefed on at the start of the next session]
-
----
 ```
 
 **Multi-agent log format** (conductor sessions):
 ```markdown
 ### YYYY-MM-DD — [Conductor] / [sub-agent]
 [2-3 sentence summary]
-Loaded: `architecture/models.md`
+Loaded: `architecture/data/models.md`
 Task: #[ID] — completed / in progress
 Left open: [anything unfinished]
 ```
@@ -212,6 +284,50 @@ Format: `[Conductor] / [Sub-agent]` — replace with actual names (e.g. `Jerry /
 - Summarize intent + outcome in 2-3 sentences. Not a transcript.
 - List files loaded this session so the next agent knows what context was available.
 - Flag anything left open so the next session starts where this one left off.
+
+---
+
+### `sessions/`
+**Audience:** Humans, on demand. **Never auto-loaded.**
+**Purpose:** Raw, auto-captured session logs (written by a hook, not by agents). Evidence, not memory.
+**Rule:** Nothing here is a source of truth. Anything worth keeping gets distilled into `log/`, `STATE.md`, `features/` or `decisions/`.
+
+---
+
+### `local/`
+**Audience:** This machine's agents and its developer. **Gitignored — never committed.**
+**Purpose:** Facts true only here: GitHub/cloud accounts to use, absolute paths, simulator or device names, resource limits, personal tooling quirks.
+**Rule:** Read at session start if present; never copy its content into tracked files. `lore create project` adds `lore/local/` to `.gitignore`; if it is missing, add it before writing anything here.
+
+---
+
+### `references.md`
+**Audience:** Claude Code + humans.
+**Purpose:** Pointers to documents that live outside `lore/` (specs, handoff docs, TODO files, tickets, wikis) so they are discoverable instead of shadow documentation.
+**Rule:** Link, don't copy. One line each: path or URL, what it is, whether it is authoritative or superseded. When a referenced doc is superseded by a lore file, say so.
+
+**Template:**
+```markdown
+# References
+
+| Doc | What it is | Status |
+|---|---|---|
+| `docs/payments-spec.md` | Original payments spec | Superseded by `features/payments/checkout.md` |
+```
+
+---
+
+### `domain/glossary.md`
+**Audience:** Claude Code + humans.
+**Purpose:** Product terms and what they mean *in this product*, so agents don't guess at overloaded words.
+**Template:** `# Glossary` then `**Term** — definition. Where it appears: [code/area]. Not to be confused with: [x].`
+
+---
+
+### `domain/rules/<rule>.md`
+**Audience:** Claude Code + humans — load when touching the behaviour the rule governs.
+**Purpose:** One business rule per file: what must be true, regardless of how the code expresses it.
+**Template:** `# Rule: [name]` · `**Statement:**` · `**Why:**` · `**Where enforced:**` (code/area, or "not enforced yet") · `**Exceptions:**`.
 
 ---
 
@@ -272,6 +388,9 @@ lore create project \
   --description "What this project does" \
   --wrk-dir "/path/to/project" \
   --shorthand MYA
+
+# Planned (LOR-9, not built yet): pick a profile at init
+lore create project --profile backend|frontend ...
 
 # Create from a lore package zip (lore/ folder inside)
 lore create project --unzip /path/to/archive.zip --name "..." --shorthand MYA
@@ -358,39 +477,95 @@ Run `lore inspect` before marking any ticket done. This is the quality gate betw
 - **Use `lore ticket <command>` exclusively** — never edit `workspace/ticket.json` directly
 - **Use `lore ticket start/done` to move tickets** — preserves metadata and assignment tracking
 - **Use `lore inspect <session> <ticket-id>`** as a pre-PR gate before marking done
-- **Use `lore recall` at session start** to load project context if no CONTEXT.md is available
+- **Use `lore recall` at session start** to load project context if no STATE.md (legacy: CONTEXT.md) is available
 - **Use `lore session status`** to get a quick state snapshot before planning work
 - **Always confirm the active project first** (`lore list projects` or `lore recall <prefix>`) before adding tickets — the CLI auto-detects from cwd but verify it found the right project
 
 ---
 
-### `architecture/overview.md`
+## Code-Linked Front Matter
+
+Every file under `features/`, `architecture/modules/`, `architecture/services/`, `apis/` and `contracts/` **starts with front matter** tying it to the code it describes:
+
+```yaml
+---
+paths: [lib/presentation/home/stewardship/**]   # code this file describes (globs, repo-relative)
+tests: [test/presentation/worth_it_*]           # tests that cover it (globs)
+verified_at: <commit hash>                      # last commit at which this file was checked against the code
+---
+```
+
+| Field | Rule |
+|---|---|
+| `paths` | Required. Globs relative to the repo root. A file with no `paths` is not code-linked and should not be in a code-linked folder. |
+| `tests` | Optional but expected. Empty means "no tests", say so rather than omitting. |
+| `verified_at` | Required. Full or short commit hash at which you last confirmed the file matches the code. Set it only after actually re-reading the code. Never bump it to "make it current". |
+
+What it enables:
+- **Loading:** an agent editing `lib/presentation/home/stewardship/x.dart` loads the lore files whose `paths` match, rather than guessing from filenames.
+- **Staleness:** a file is suspect if code under its `paths` changed since `verified_at` (`git log <verified_at>..HEAD -- <paths>`). A code area matched by no file's `paths` is uncovered lore.
+- **`lore doctor`** (not built yet, separate ticket) will automate both checks. Until then, agents do them by hand at session end.
+
+---
+
+## Architecture and Profile File Contracts
+
+Applies to the folders in each profile. Each entry: **audience** · **purpose** · **template/skeleton**. All carry a rule: *stub honestly, never invent* (see *Init: New Project*). Files marked **[code-linked]** need the front matter above.
+
+### Architecture
+
+#### `architecture/overview.md` (both profiles)
 **Audience:** Claude Code + humans — load when making structural changes.
-**Purpose:** How the system is designed. Service map, data flow, infra topology, external dependencies.
-**Rule:** Updated by agent when architecture changes. Covers the *shape* of the system, not every field.
+**Purpose:** The shape of the system. Backend: services, data flow, infra topology, external dependencies. Frontend: layers, state management, dependency injection.
+**Rule:** Updated when structure changes. Covers the *shape*, not every field.
+
+#### Backend
+
+| File | Audience · Purpose | Skeleton |
+|---|---|---|
+| `architecture/services/<name>.md` **[code-linked]** | Agents editing that service/app module · what it owns and how it behaves | `# Service: [name]` · Responsibility · Entry points · Depends on · Gotchas |
+| `architecture/data/models.md` | Agents touching schema · fields, relationships, constraints, quirks (soft deletes, multi-tenancy, custom managers, naming) | `# Models` · per model: fields, relations, constraints, quirks |
+| `architecture/data/migrations.md` | Anyone running or writing migrations · order, gotchas, **irreversible steps** | `# Migrations` · Order · Gotchas · Irreversible (flag loudly) |
+| `architecture/jobs.md` | Agents touching async work · queues, scheduled tasks, workers | `# Jobs` · per job: trigger, schedule, retries, idempotent? |
+| `architecture/security.md` | Anyone touching auth/permissions · auth model, permission rules, **where secrets live (names/locations only, never values)** | `# Security` · Auth · Permissions · Secrets (where, not what) |
+| `apis/<surface>.md` **[code-linked]** | Agents and client devs · endpoints this project exposes per surface/version | `# API: [surface]` · Base URL · Auth · Endpoints · Errors · Versioning · Rate limits |
+| `contracts/consumers/<client>.md` **[code-linked]** | Agents changing an API · who calls this backend and what they rely on | `# Consumer: [client]` · Endpoints used · Assumptions · Breaking-change contact |
+| `contracts/upstream/<service>.md` **[code-linked]** | Agents touching integrations · third-party/internal services this backend calls | `# Upstream: [service]` · Base URL · Auth · Endpoints used · Limits · Failure behaviour |
+| `ops/environments.md` | Deployers · hosts and config keys per environment (**names only, never values**) | `# Environments` · per env: hosts, config keys |
+| `ops/deploy.md` | Deployers · how a deploy happens, order across services | `# Deploy` · Steps · Order · Rollback |
+| `ops/runbooks/<task>.md` | On-call/anyone · step-by-step for a recurring task | `# Runbook: [task]` · When · Steps · Verify · If it fails |
+| `ops/incidents/YYYY-MM-DD-<slug>.md` | Anyone · what broke, why, what changed | `# Incident: [slug]` · Impact · Timeline · Root cause · Fix · Follow-ups |
+| `ops/observability.md` | On-call · where to look | `# Observability` · Dashboards · Alerts · Logs |
+
+#### Frontend (mobile and web)
+
+| File | Audience · Purpose | Skeleton |
+|---|---|---|
+| `architecture/modules/<area>.md` **[code-linked]** | Agents editing that area · one per code area, mirroring the source tree | `# Module: [area]` · Responsibility · Key classes · State · Depends on · Gotchas |
+| `architecture/navigation.md` | Agents adding screens · routes, gates (auth/onboarding), deep links | `# Navigation` · Route table · Gates · Deep links |
+| `architecture/state.md` | Agents touching data flow · where state lives, caching, persistence | `# State` · Per store: owner, lifetime, persistence |
+| `architecture/environments.md` | Builders · hosts, env keys, build flavours (**names only**) | `# Environments` · Flavours · Keys · Hosts |
+| `design/system.md` | Agents writing UI · colours, type, spacing, component rules | `# Design system` · Tokens · Components · Do/Don't |
+| `design/copy.md` | Agents writing UI text · voice and wording rules | `# Copy` · Voice · Terms to use/avoid · Examples |
+| `contracts/<service>.md` **[code-linked]** | Agents and backend devs · each API the app consumes | `# Contract: [service]` · **Status** (requested / agreed / deployed / verified) · Endpoints · Auth · Known gaps |
+| `platform/ios.md`, `android.md`, `web.md` | Agents touching platform config · permissions, entitlements, store setup, gotchas | `# iOS` · Permissions · Entitlements · Store setup · Gotchas |
+| `analytics.md` | Agents adding events · events, what they mean, where they go | `# Analytics` · per event: name, trigger, properties, destination |
+| `ops/release.md` | Releasers · how a build is cut, version/build-number rules, release history | `# Release` · Steps · Versioning · History |
+| `ops/runbooks/<task>.md` | Anyone · step-by-step for a recurring task | same as backend runbook |
 
 ---
 
-### `architecture/models.md`
-**Audience:** Claude Code + humans.
-**Purpose:** Data models and schemas — field names, types, relationships, constraints, quirks.
-**Include:** Soft deletes, multi-tenancy patterns, custom managers, naming conventions, anything non-obvious.
-
----
-
-### `architecture/apis.md`
-**Audience:** Claude Code + humans.
-**Purpose:** API contracts — internal endpoints and external services.
-**Include:** Base URLs, auth method, key endpoints, rate limits, versioning, known gotchas.
-
----
-
-### `features/[feature-name].md`
-**Audience:** Claude Code + humans — load when working on that feature.
-**Purpose:** One file per committed or in-progress feature.
+### `features/<area>/<flow>.md`
+**Audience:** Claude Code + humans — load when working on that flow.
+**Purpose:** One file per committed or in-progress flow, grouped by product area. **Code-linked** (front matter required).
 
 **Template:**
 ```markdown
+---
+paths: [lib/presentation/auth/**]
+tests: [test/presentation/auth_*]
+verified_at: <commit hash>
+---
 # Feature: [Name]
 
 **Status:** Idea / In Progress / Done / Paused
@@ -443,10 +618,10 @@ Run `lore inspect` before marking any ticket done. This is the quality gate betw
 
 ---
 
-### `decisions/[decision-slug].md`
+### `decisions/NNNN-<slug>.md`
 **Audience:** Claude Code + humans — load when making or revisiting a significant decision.
 **Purpose:** Architecture Decision Records. Prevents re-litigating what's already been decided.
-**Rule:** One file per decision. Filename is a short kebab-case slug of the decision title.
+**Rule:** One file per decision. Filename is a zero-padded sequence number plus a short kebab-case slug (`0001-use-postgres.md`). Numbers are never reused; a superseded decision stays, marked `Superseded by NNNN`. Legacy projects with un-numbered slugs keep them; number new ones from the highest existing.
 
 **Template:**
 ```markdown
@@ -576,10 +751,10 @@ skills:
 
 At the end of every session, Claude must:
 
-1. **Update `CONTEXT.md` header** — rewrite the Focus, Phase, Open, Next lines to reflect current state
-2. **Append a log entry** to `CONTEXT.md` — compact, 3-5 lines, what was done and what's open
+1. **Rewrite `STATE.md`** — Focus, Phase, Open, Next reflect current state (legacy: the `CONTEXT.md` header)
+2. **Append a log entry** to `log/YYYY-MM.md` — compact, 3-5 lines, what was done and what's open (legacy: the `CONTEXT.md` log)
 3. **Update tickets** — `lore ticket done <ID>` for completed; `lore ticket add` for new ones
-4. **Update feature files** if a feature was started, completed, or changed
+4. **Update feature files** if a feature was started, completed, or changed; re-verify any code-linked file whose `paths` you touched and bump its `verified_at`
 5. **Log decisions** to `decisions/` if a significant architectural choice was made
 6. **Update `testing/registry.md`** if tests were added or removed
 7. **Commit** — both code and `lore/` changes committed together. They move as one.
@@ -591,6 +766,7 @@ At the end of every session, Claude must:
 | `OG.md` | Human-only. Always. |
 | `MISSION.md` | Human-only. Always. |
 | `CHANGELOG.md` | Hook-generated. Always. |
+| `sessions/` | Hook-captured raw logs. Never edit, never auto-load. |
 
 ---
 
@@ -611,7 +787,7 @@ When a conductor (e.g. Hermes/Jerry) coordinates multiple sub-agents, `lore` bec
 ### Conductor Startup (sub-agent's understanding)
 
 When the conductor begins:
-1. Reads Tier 1: `INDEX.md` → `GUARDRAILS.md` → `CONTEXT.md`
+1. Reads Tier 1: `INDEX.md` → `GUARDRAILS.md` → `STATE.md` → latest `log/` entries (legacy: `CONTEXT.md`)
 2. Runs `lore session status` + `lore ticket list --status todo`
 3. Builds delegation plan — which tasks, which agents, what order
 4. Assigns tasks via delegation packets
@@ -624,7 +800,7 @@ What the conductor sends to each sub-agent when delegating a task:
 ```
 Task: #[ID] [description]
 
-Context (paste CONTEXT.md header):
+Context (paste STATE.md; legacy: CONTEXT.md header):
   Focus: ...
   Phase: ...
   Open: ...
@@ -638,7 +814,7 @@ Produce: [clear output spec — what files to write, what to build, what tests t
 
 On completion you must:
   1. Run `lore ticket done [ID]` to close the ticket
-  2. Append a log entry to lore/CONTEXT.md using the multi-agent format
+  2. Append a log entry to lore/log/YYYY-MM.md using the multi-agent format
   3. Update any feature files, decisions, or test registry that changed
   4. Report back: task ID, outcome, files changed, what's left open
 ```
@@ -648,7 +824,7 @@ On completion you must:
 When a sub-agent finishes, it must do all of the following before reporting back:
 
 1. Run `lore ticket done <ID>` to close the ticket
-2. Append a log entry to `CONTEXT.md` using the multi-agent format
+2. Append a log entry to this month's `log/` file using the multi-agent format
 3. Update any `features/`, `decisions/`, or `testing/registry.md` that changed
 4. Report back to the conductor:
    - Task ID and status (completed / partial / blocked)
@@ -664,17 +840,17 @@ These rules prevent lore conflicts when multiple agents are active:
 - **Sequential lore writes** — if two agents finish near-simultaneously, they queue writes; conductor merges if needed
 - **No simultaneous file edits** — two agents must never write to the same file at the same time
 - **`lore ticket done` is safe to run concurrently** — the CLI handles atomic writes to ticket.json
-- **`CONTEXT.md` header is the conductor's** — sub-agents append log entries; only the conductor rewrites the header block at session end
+- **`STATE.md` is the conductor's** — sub-agents append log entries; only the conductor rewrites `STATE.md` at session end
 
 ### Conductor Loop
 
 ```
-1. Read lore Tier 1 + run `lore session status` + `lore ticket list --status todo`
+1. Read lore Tier 1 (INDEX, GUARDRAILS, STATE, latest log) + run `lore session status` + `lore ticket list --status todo`
 2. Build task assignments based on todo tickets + current context
 3. Send delegation packets to sub-agents (can run in parallel)
 4. Receive completion reports from sub-agents
 5. Merge any lore conflicts
-6. Rewrite CONTEXT.md header with current state
+6. Rewrite STATE.md with current state
 7. Repeat or close session
 ```
 
@@ -682,7 +858,7 @@ These rules prevent lore conflicts when multiple agents are active:
 
 | Responsibility | Conductor | Sub-Agent |
 |---|---|---|
-| `CONTEXT.md` header | Rewrites at session end | Appends log entries only |
+| `STATE.md` | Rewrites at session end | Appends log entries only |
 | Ticket assignment | Assigns via `lore ticket start <ID> --agent [name]` | Never self-assigns |
 | Ticket completion | Monitors overall state | Runs `lore ticket done <ID>` |
 | `features/`, `decisions/`, `testing/` | — | Updates files relevant to their task |
@@ -702,12 +878,16 @@ The `post-commit` hook appends every commit to `CHANGELOG.md` automatically. Ins
 ./install.sh --hooks /path/to/your/project
 ```
 
+### Session-start hook (agent-side, per developer)
+
+A `SessionStart` hook in the agent's own settings (e.g. `~/.claude/settings.json`) injects Tier 1 when a session begins. It must load, in order: `INDEX.md`, `GUARDRAILS.md`, `STATE.md`, then the most recent `log/` entries. For a legacy project with no `STATE.md`, load the full `CONTEXT.md` header block, never just the tail of the file. It must not load `sessions/`, `OG.md` or `MISSION.md`. Updating the hook is tracked in LOR-10; the hook is not shipped in this repo.
+
 ### What hooks do vs what agents do
 
 | Responsibility | Hook | Agent |
 |---|---|---|
 | `CHANGELOG.md` | Auto-appends on every commit | Never touches |
-| `CONTEXT.md` | — | Updates header + appends log |
+| `STATE.md` + `log/` | — | Rewrites state + appends log |
 | `workspace/ticket.json` | — | Updates via `lore ticket` CLI commands |
 | `architecture/` | — | Updates when structure changes |
 | `testing/registry.md` | — | Updates when tests change |
@@ -732,19 +912,23 @@ Agents can propose new lore structure for a project — a new folder, a new file
 When asked to init `lore` on a new project:
 
 1. Run `lore create project --name "..." --description "..." --wrk-dir "." --shorthand ABC`
-2. Create the full folder structure
-3. Stub every file with its template
+   Planned (LOR-9): add `--profile backend|frontend`. Until then, pick the profile with the developer in step 8 and create only that profile's folders by hand.
+2. Create the shared core plus **only the chosen profile's** folders (see *Folder Structure*). Add `lore/local/` to `.gitignore`.
+3. Stub every file with its template (code-linked files get front matter with empty `paths` and `verified_at: unverified`)
 4. Fill `CLAUDE.md` with what's known: project name, stack, purpose, Session Rule, and lore Index
 5. Leave `OG.md` blank with the prompt: *"What's on your mind about this project?"*
 6. Leave `MISSION.md` blank with the prompt: *"What is this project and why should it exist?"*
-7. Set `CONTEXT.md` header with placeholder values and an empty log section
-8. Ask the developer to confirm: stack, key rules, and current focus before finalizing `CLAUDE.md`
+7. Set `STATE.md` with placeholder values; create the current month's `log/YYYY-MM.md` with just its heading
+8. Ask the developer to confirm: profile (backend / frontend), stack, key rules, and current focus before finalizing `CLAUDE.md`
 
 **What NOT to invent:**
-- Do not populate `architecture/models.md` with field names — stub only
-- Do not populate `architecture/apis.md` with endpoints — stub only
+- Do not populate `architecture/data/models.md` with field names — stub only
+- Do not populate `apis/`, `contracts/` or `ops/environments.md` with endpoints, hosts or keys — stub only
+- Do not invent `domain/rules/`, `design/` tokens or `analytics.md` events — stub only
 - Do not create files inside `features/`, `ideas/`, or `decisions/` — leave dirs empty
 - Do not add `testing/registry.md` coverage rows — stub only
+- Do not put machine-specific facts (accounts, paths) in `GUARDRAILS.md` — they go in `local/`
+- Do not write a `verified_at` hash you did not verify
 
 Inventing content contaminates `lore` with hallucinated facts that look real. A blank stub is better than a confident wrong guess.
 
@@ -762,10 +946,12 @@ When pointed at a repo that has no `lore`:
 Scan `README.md`, package files (`requirements.txt`, `package.json`, `pubspec.yaml`, `Dockerfile`), and folder structure to infer stack and architecture.
 
 **Step 3 — Generate `lore/`** using canonical paths only:
+- Choose the profile from what the repo is (server/API code → backend; Flutter/React Native/web client → frontend) and say which you chose
 - `lore/architecture/overview.md` from inferred system design
-- `lore/architecture/models.md` from model/schema files found
-- `lore/architecture/apis.md` from route/serializer files found
-- `lore/CONTEXT.md` with header ready for first session entry
+- Backend: `architecture/data/models.md` from model/schema files, `apis/<surface>.md` from route/serializer files. Frontend: `architecture/modules/<area>.md` per code area, `architecture/navigation.md` from the router
+- Code-linked files get `paths` from the files you read and `verified_at` set to the current `HEAD` hash
+- `lore/STATE.md` ready for first session, and the current month's `log/` file
+- `lore/references.md` listing existing docs found in the repo (specs, TODOs, handoffs) with their status — link, don't copy
 - `lore/GUARDRAILS.md` with reasonable defaults from what you found
 - `lore/OG.md` and `lore/MISSION.md` left blank with human prompts
 
@@ -775,7 +961,7 @@ Run `lore create project --name "..." --wrk-dir "." --shorthand ABC` to create t
 **Step 5 — Flag gaps**
 Consolidate everything that couldn't be inferred into a numbered list. Never silently skip.
 
-**Critical: never invent subdirectories** outside the canonical structure. All inferred content goes into canonical files. A non-standard `lore/` layout breaks compatibility with every agent that reads it.
+**Critical: never invent subdirectories** outside the canonical structure (shared core + the chosen profile). All inferred content goes into canonical files. A non-standard `lore/` layout breaks compatibility with every agent that reads it.
 
 ---
 
@@ -788,7 +974,7 @@ The ideation layer (limn skill) is where ideas get shaped into Lore Packages. Th
 2. Say "generate lore package" — the ideation agent outputs a structured handoff artifact
 3. Hand the Lore Package to the conductor (multi-agent) or Claude Code directly (solo)
 4. Agent reads lore, applies the package, picks up tickets via `lore ticket list`, and executes
-5. After building, Claude Code updates CONTEXT.md and runs `lore ticket done <ID>` for completed work
+5. After building, Claude Code updates STATE.md and the log and runs `lore ticket done <ID>` for completed work
 6. Commit lore alongside code changes
 ```
 
@@ -796,10 +982,24 @@ The ideation layer (limn skill) is where ideas get shaped into Lore Packages. Th
 
 ---
 
+## Migrating a legacy lore
+
+For a project still on `CONTEXT.md` and `architecture/{models,apis}.md`. Content is preserved; nothing is deleted until the developer confirms. (A `lore migrate` command is planned in LOR-9; until then, do it by hand.)
+
+1. **Split `CONTEXT.md`.** Header block (Focus/Phase/Open/Next) → `STATE.md`. Each `### YYYY-MM-DD` log entry → `log/YYYY-MM.md` by its date, in original order, text unchanged.
+2. **Move architecture files.** Backend: `architecture/models.md` → `architecture/data/models.md`; `architecture/apis.md` → `apis/<surface>.md` (split per surface if it mixes several; external services go to `contracts/upstream/`). Frontend: `architecture/models.md` content goes to the relevant `architecture/modules/<area>.md` or `architecture/state.md`.
+3. **Add front matter** to code-linked files. Set `paths`; set `verified_at` only for files you re-checked against the code, otherwise `unverified`.
+4. **Move machine-specific guardrails** (accounts, local paths) to `local/` and add `lore/local/` to `.gitignore`.
+5. **Update `INDEX.md`**, and add `references.md` for any docs living outside lore.
+6. **Confirm with the developer**, then remove `CONTEXT.md` and the old paths. Commit the migration on its own.
+
+---
+
 ## Keeping `lore` Healthy
 
-- `CONTEXT.md` header is rewritten every session — stale focus is worse than no focus
+- `STATE.md` is rewritten every session — stale focus is worse than no focus
 - Log entries are appended every session — never skip it
+- Code-linked files carry a `verified_at`; if code under a file's `paths` changed since, the file is suspect — re-verify or fix it
 - Tickets reflect current reality — `lore ticket done` the moment work is complete
 - Feature files get updated when features change — not just when they're created
 - `testing/registry.md` grows with the test suite
