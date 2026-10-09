@@ -88,6 +88,41 @@ install_cli() {
   exit 1
 }
 
+install_shell_function() {
+  local marker="# __lore_takeme__"
+  local snippet
+  snippet="
+$marker
+lore() {
+  if [[ \"\$1\" == \"takeme\" && -n \"\$2\" ]]; then
+    local dir
+    dir=\$(command lore \"\$@\")
+    local code=\$?
+    [[ \$code -eq 0 && -n \"\$dir\" ]] && cd \"\$dir\" || return \$code
+  else
+    command lore \"\$@\"
+  fi
+}"
+
+  local installed=false
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    [ -f "$rc" ] || continue
+    if ! grep -qF "$marker" "$rc"; then
+      printf '\n%s\n' "$snippet" >> "$rc"
+      echo "[lore] Shell function added → $rc"
+      installed=true
+    else
+      echo "[lore] Shell function already present in $rc (skipped)"
+      installed=true
+    fi
+  done
+
+  if [ "$installed" = false ]; then
+    echo "[lore] No .zshrc or .bashrc found. Add this to your shell config manually:"
+    printf '%s\n' "$snippet"
+  fi
+}
+
 install_skill() {
   local skill_name="$1"
   local target_dir="$SKILL_DIR"
@@ -156,7 +191,9 @@ done
 # Default: install CLI
 if [ -z "$SKILL_DIR" ] && [ -z "$PROJECT_DIR" ]; then
   install_cli
+  install_shell_function
   echo "[lore] Done! Run 'lore --help' to get started."
+  echo "[lore] Restart your shell or run: source ~/.zshrc"
   exit 0
 fi
 
