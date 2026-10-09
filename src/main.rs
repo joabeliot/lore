@@ -62,6 +62,11 @@ enum Commands {
     },
     /// Update lore to the latest version
     Update,
+    /// Print the working directory of a session (used by the shell function to cd there)
+    Takeme {
+        /// Session UUID prefix, shorthand, or project name (omit to list all)
+        session: Option<String>,
+    },
     /// Show a dashboard in the browser
     Dashboard {
         /// Port to serve on (default: 8080)
@@ -363,6 +368,7 @@ fn main() {
             } => commands::cmd_edit_project(input, name.as_deref(), description.as_deref(), shorthand.as_deref(), wrk_dir.as_deref()),
         },
         Commands::Update => commands::cmd_update(),
+        Commands::Takeme { session } => commands::cmd_takeme(session.as_deref()),
         Commands::Dashboard { port } => dashboard::cmd_dashboard(*port),
     };
 
