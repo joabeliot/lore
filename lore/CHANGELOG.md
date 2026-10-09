@@ -14,3 +14,18 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 
 ---
 
+## 2026-10-09 22:22 — fa00a13 — docs(lore): add CLAUDE.md entry point, refresh lore/ state
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+---
+
+## 2026-10-09 22:23 — 0cd818d — chore: keep unreviewed local edits out of this PR
+
+Restores install.sh, src/commands.rs, src/main.rs to their previous committed
+state and untracks root sessions/. Working-tree edits are kept locally.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+---
+
