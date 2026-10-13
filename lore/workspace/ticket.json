@@ -303,7 +303,230 @@
           "detail": "decisions/project-profiles.md"
         }
       ]
+    },
+    {
+      "id": "LOR-11",
+      "name": "Contract linking: feature docs list flows/tests/tickets; board shows contract -> flow -> ticket -> status",
+      "description": "DEPENDS ON LOR-3 (schema) and LOR-4 (inspect runs verify steps). Front matter in lore/features/*.md (flows:, tests:, tickets:); command prints the table; LOR-3 done-gate runs the linked checks. See ideas/flock-audit-lore-fml.md.",
+      "context": [
+        "ideas/flock-audit-lore-fml.md",
+        "ideas/agentic-dev.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P1",
+      "tags": [
+        "features",
+        "gates"
+      ],
+      "source": "Flock v2 audit 2026-10-13",
+      "created": "2026-10-13",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-13T08:48:06.539170+00:00",
+          "event": "created",
+          "detail": "LOR-11"
+        }
+      ]
+    },
+    {
+      "id": "LOR-12",
+      "name": "lore packet: scaffold an agent work packet from a ticket + feature doc",
+      "description": "DEPENDS ON LOR-5 (conductor worker adapters). Standard block: repo root, read/edit-only rule, edit-first, no shell, exact path manifest, allowed-to-change list, named tests. Playbook: ideas/agentic-dev.md section 3.",
+      "context": [
+        "ideas/flock-audit-lore-fml.md",
+        "ideas/agentic-dev.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P2",
+      "tags": [
+        "agents",
+        "conductor"
+      ],
+      "source": "Flock v2 audit 2026-10-13",
+      "created": "2026-10-13",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-13T08:48:06.545944+00:00",
+          "event": "created",
+          "detail": "LOR-12"
+        }
+      ]
+    },
+    {
+      "id": "LOR-13",
+      "name": "Resolve session from cwd for every ticket command (done/start/show/inspect/session)",
+      "description": "Already listed as a symptom in LOR-7 DOCS VS TOOL ('ticket done EPA-1 needs a session arg first'); this is the concrete fix. Walk up from cwd to find lore/config.yml like git does, explicit session stays as override. Needs LOR-1's test harness (temp HOME). Flock: 'lore ticket done FLK-82' failed from a subfolder; 'ticket edit' also needed the session id today.",
+      "context": [
+        "ideas/flock-audit-lore-fml.md",
+        "ideas/agentic-dev.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P1",
+      "tags": [
+        "cli",
+        "ergonomics"
+      ],
+      "source": "Flock v2 audit 2026-10-13",
+      "created": "2026-10-13",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-13T08:48:06.551196+00:00",
+          "event": "created",
+          "detail": "LOR-13"
+        }
+      ]
+    },
+    {
+      "id": "LOR-14",
+      "name": "Stale and drifted ticket detector (inprogress with no activity; linked checks already pass)",
+      "description": "DEPENDS ON LOR-2 (event log gives activity timestamps) and LOR-3/LOR-11 (linked checks). Child of LOR-7 design gap 'no staleness detection'. Flock: FLK-77..80 stayed inprogress after shipping.",
+      "context": [
+        "ideas/flock-audit-lore-fml.md",
+        "ideas/agentic-dev.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P2",
+      "tags": [
+        "tickets",
+        "hygiene"
+      ],
+      "source": "Flock v2 audit 2026-10-13",
+      "created": "2026-10-13",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-13T08:48:06.556192+00:00",
+          "event": "created",
+          "detail": "LOR-14"
+        }
+      ]
+    },
+    {
+      "id": "LOR-15",
+      "name": "Docs-vs-code drift check: flag lore docs naming files, routes or commands that no longer exist",
+      "description": "Child of LOR-7 (docs vs tool / design gaps). Scan lore md for backticked paths, routes and commands; report missing ones; read-only, no dependencies. Flock: docs said one thing while code did another.",
+      "context": [
+        "ideas/flock-audit-lore-fml.md",
+        "ideas/agentic-dev.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P2",
+      "tags": [
+        "docs",
+        "drift"
+      ],
+      "source": "Flock v2 audit 2026-10-13",
+      "created": "2026-10-13",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-13T08:48:06.560775+00:00",
+          "event": "created",
+          "detail": "LOR-15"
+        }
+      ]
+    },
+    {
+      "id": "LOR-16",
+      "name": "End-of-slice write-back warning: ticket closes without CONTEXT/STATE, registry or feature-doc updates",
+      "description": "Child of LOR-7 'agent forgets to update at session end'. Soft warning on ticket done first; becomes a gate input once LOR-3 lands. Use the profile file names from LOR-8/9 (STATE.md/log) once they exist, CONTEXT.md for legacy projects.",
+      "context": [
+        "ideas/flock-audit-lore-fml.md",
+        "ideas/agentic-dev.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P2",
+      "tags": [
+        "hooks",
+        "discipline"
+      ],
+      "source": "Flock v2 audit 2026-10-13",
+      "created": "2026-10-13",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-13T08:48:06.565262+00:00",
+          "event": "created",
+          "detail": "LOR-16"
+        }
+      ]
+    },
+    {
+      "id": "LOR-17",
+      "name": "Archive old log months and keep STATE.md header current (after LOR-9)",
+      "description": "DEPENDS ON LOR-9 (CONTEXT.md split into STATE.md + log/YYYY-MM.md) and LOR-10 (hook loads STATE + recent log). With that split, CONTEXT growth is already solved structurally. Remaining here: a command that rolls log months older than N into an archive and rewrites the STATE.md header (Focus/Phase/Open/Next) from the latest entries. Flock evidence: CONTEXT.md reached ~200 lines.",
+      "context": [
+        "ideas/flock-audit-lore-fml.md",
+        "ideas/agentic-dev.md"
+      ],
+      "plan": null,
+      "status": "backlog",
+      "priority": "P2",
+      "tags": [
+        "context",
+        "archive"
+      ],
+      "source": "Flock v2 audit 2026-10-13",
+      "created": "2026-10-13",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-13T08:48:06.569832+00:00",
+          "event": "created",
+          "detail": "LOR-17"
+        }
+      ]
+    },
+    {
+      "id": "LOR-18",
+      "name": "Destructive-bug fixes: delete project wipes lore/ with no prompt; re-create project empties tickets",
+      "description": "Split from LOR-7 (listed 'fix first' but never ticketed). (1) lore delete project must not remove lore/ without explicit --purge and a confirmation; docs say files are kept. (2) lore create project on an existing project must refuse or merge, never empty tickets. Tests first using LOR-1 harness. Parallel-write loss is LOR-1 (F4).",
+      "context": [
+        "decisions/conductor-and-gates.md"
+      ],
+      "plan": null,
+      "status": "todo",
+      "priority": "P0",
+      "tags": [
+        "bug",
+        "destructive"
+      ],
+      "source": "Flock v2 audit 2026-10-13",
+      "created": "2026-10-13",
+      "assigned_to": null,
+      "started_at": null,
+      "completed_at": null,
+      "logs": [
+        {
+          "at": "2026-10-13T08:50:18.764454+00:00",
+          "event": "created",
+          "detail": "LOR-18"
+        }
+      ]
     }
   ],
-  "counter": 11
+  "counter": 19
 }
